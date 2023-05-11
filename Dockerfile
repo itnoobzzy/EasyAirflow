@@ -40,5 +40,7 @@ RUN pip install pymysql
 RUN pip install mysqlclient
 RUN pip install redis
 RUN pip install livy==0.6.0
+RUN pip install apache-airflow-providers-mysql
+RUN pip install apache-airflow-providers-apache-hive
 
 RUN airflow db init
