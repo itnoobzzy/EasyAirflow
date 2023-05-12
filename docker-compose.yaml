@@ -9,7 +9,6 @@ services:
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
-            - ./patchs/2.6.0/task_instance.py:/home/airflow/.local/lib/python3.10/site-packages/airflow/models/task_instance.py
         ports:
             - "8080:8080"
         command: ["airflow", "webserver"]
@@ -22,7 +21,6 @@ services:
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
-            - ./patchs/2.6.0/task_instance.py:/home/airflow/.local/lib/python3.10/site-packages/airflow/models/task_instance.py
         command: ["airflow", "scheduler"]
     flower:
         image: airflow:2.6.0
@@ -33,7 +31,6 @@ services:
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
-            - ./patchs/2.6.0/task_instance.py:/home/airflow/.local/lib/python3.10/site-packages/airflow/models/task_instance.py
         ports:
             - "5555:5555"
         command: ["airflow", "celery", "flower"]
@@ -46,7 +43,6 @@ services:
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
-            - ./patchs/2.6.0/task_instance.py:/home/airflow/.local/lib/python3.10/site-packages/airflow/models/task_instance.py
         ports:
             - "8793:8793"
         command: ["airflow", "celery", "worker"]
