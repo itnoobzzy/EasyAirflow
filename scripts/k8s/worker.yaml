@@ -1,0 +1,71 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: airflow-worker
+  namespace: airflow-v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: airflow
+      component: worker
+      release: v2.6.0
+  template:
+    metadata:
+      labels:
+        tier: airflow
+        component: worker
+        release: v2.6.0
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: worker
+          image: itnoobzzy/airflow:v2.6.0-python3.10
+          imagePullPolicy: IfNotPresent
+          args: ["airflow", "celery", "worker"]
+          env:
+            - name: AIRFLOW__CORE__FERNET_KEY
+              value: cwmLHK76Sp9XclhLzHwCNXNiAr04OSMKQ--6WXRjmss=
+            - name: AIRFLOW__CORE__EXECUTOR
+              value: CeleryExecutor
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-secrets
+                  key: sql_alchemy_conn
+            - name: AIRFLOW__CELERY__BROKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-secrets
+                  key: broker_url
+            - name: AIRFLOW__CELERY__RESULT_BACKEND
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-secrets
+                  key: result_backend
+          volumeMounts:
+            - name: logs-pv
+              mountPath: "/opt/airflow/logs"
+            - name: dags-pv
+              mountPath: "/opt/airflow/dags"
+            - name: plugins-pv
+              mountPath: "/opt/airflow/plugins"
+            - name: config
+              mountPath: "/opt/airflow/airflow.cfg"
+              subPath: airflow.cfg
+      volumes:
+        - name: config
+          configMap:
+            name: airflow-configmap
+        - name: logs-pv
+          persistentVolumeClaim:
+            claimName: airflow-logs-pvc
+        - name: dags-pv
+          persistentVolumeClaim:
+            claimName: airflow-dags-pvc
+        - name: plugins-pv
+          persistentVolumeClaim:
+            claimName: airflow-plugins-pvc

@@ -1,7 +1,7 @@
 version: '2.1'
 services:
     webserver:
-        image: airflow:2.6.0
+        image: itnoobzzy/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             # dag and plugins
@@ -13,7 +13,7 @@ services:
             - "8080:8080"
         command: ["airflow", "webserver"]
     scheduler:
-        image: airflow:2.6.0
+        image: itnoobzzy/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             # dag and plugins
@@ -23,7 +23,7 @@ services:
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
         command: ["airflow", "scheduler"]
     flower:
-        image: airflow:2.6.0
+        image: itnoobzzy/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             # dag and plugins
@@ -35,7 +35,7 @@ services:
             - "5555:5555"
         command: ["airflow", "celery", "flower"]
     worker:
-        image: airflow:2.6.0
+        image: itnoobzzy/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             # dag and plugins

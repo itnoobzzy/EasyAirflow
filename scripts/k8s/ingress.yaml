@@ -1,0 +1,22 @@
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+   name:  airflow-ingress
+spec:
+  rules:
+    - host: airflow-webserver.akulaku.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: airflow-webserver-svc
+            servicePort: 8080
+    - host: airflow-flower.akulaku.com
+      http:
+        paths:
+            - path: /
+              backend:
+                serviceName: airflow-flower-svc
+                servicePort: 5555
