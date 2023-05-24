@@ -11,6 +11,8 @@ services:
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
         ports:
             - "8080:8080"
+        environment:
+            - LANDSAT_SQLALCHEMY_URI=${LANDSAT_SQLALCHEMY_URI}
         command: ["airflow", "webserver"]
     scheduler:
         image: itnoobzzy/airflow:v2.6.0-python3.10
@@ -21,6 +23,8 @@ services:
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
+        environment:
+            - LANDSAT_SQLALCHEMY_URI=${LANDSAT_SQLALCHEMY_URI}
         command: ["airflow", "scheduler"]
     flower:
         image: itnoobzzy/airflow:v2.6.0-python3.10
@@ -45,4 +49,6 @@ services:
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
         ports:
             - "8793:8793"
+        environment:
+            - LANDSAT_SQLALCHEMY_URI=${LANDSAT_SQLALCHEMY_URI}
         command: ["airflow", "celery", "worker"]
