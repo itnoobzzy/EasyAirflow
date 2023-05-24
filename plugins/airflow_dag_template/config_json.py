@@ -62,19 +62,20 @@ def taskDefineModel_to_taskDefine(obj):
     private_params = copy.deepcopy(obj_to_dict['private_params'])
     obj_to_dict.pop('private_params', None)
 
-    # 特殊数据类型才需要，这个和 任务类型有关
-    if 'execution_delta_num_minutes' in private_params:
-        execution_delta = timedelta(minutes=private_params['execution_delta_num_minutes'])
-        private_params['execution_delta'] = execution_delta
+    if private_params:
+        # 特殊数据类型才需要，这个和 任务类型有关
+        if 'execution_delta_num_minutes' in private_params:
+            execution_delta = timedelta(minutes=private_params['execution_delta_num_minutes'])
+            private_params['execution_delta'] = execution_delta
 
-    # 针对外部依赖使用的，计算依赖的函数
-    if 'execution_date_fn' in private_params:
-        key_callback_fn = private_params['execution_date_fn']
+        # 针对外部依赖使用的，计算依赖的函数
+        if 'execution_date_fn' in private_params:
+            key_callback_fn = private_params['execution_date_fn']
 
-        execution_date_fn = key_callback_fns[key_callback_fn]
-        private_params['execution_date_fn'] = execution_date_fn
+            execution_date_fn = key_callback_fns[key_callback_fn]
+            private_params['execution_date_fn'] = execution_date_fn
 
-    obj_to_dict.update(private_params)
+        obj_to_dict.update(private_params)
 
     # 判断任务类型
     type_operator = obj_to_dict['operator']
@@ -157,6 +158,6 @@ def get_dag_template_config(dag_id, session=None):
 
 
 if __name__ == '__main__':
-    dag_id = 'dag-Landsat_LandsatMySqlOperator__LTAdmin_1603179073040'
+    dag_id = 'dag-Landsat_LandsatHiveOperator_zhouzy1_1684924269594-1684924376644'
     config = get_dag_template_config(dag_id)
     print(config)

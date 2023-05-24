@@ -23,5 +23,6 @@ class DagDefineModel(Base):
         obj_to_dict.pop('metadata', None)
         obj_to_dict.pop('is_publish', None)
         obj_to_dict.pop('owner', None)
+        obj_to_dict.pop('registry', None)
         return obj_to_dict
 
