@@ -20,7 +20,7 @@ from airflow_dag_template.database import DBManger
 # The base class which our objects will be defined on.
 Base = declarative_base()
 
-LANDSAT_SQLALCHEMY_URI = os.environ.get("LANDSAT_SQLALCHEMY_URI")
+LANDSAT_SQLALCHEMY_URI = os.environ.get("LANDSAT_SQLALCHEMY_CONN")
 
 landsat_db = DBManger(LANDSAT_SQLALCHEMY_URI)
 
