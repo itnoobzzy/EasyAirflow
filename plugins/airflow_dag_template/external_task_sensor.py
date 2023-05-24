@@ -1,24 +1,19 @@
 from datetime import datetime
-import time
-
-import pendulum
 from croniter import croniter
-
 
 from airflow_dag_template.TaskDefine import TaskDefineModel
 from airflow_dag_template.sqlalchemy_util import pendulum_convert_datetime, datetime_convert_pendulum, provide_session
 
 
 @provide_session
-def get_task_scheduler_interval(dag_id,task_id,session=None):
-
-    task_define = session.query(TaskDefineModel)\
-        .filter(TaskDefineModel.task_id == task_id)\
+def get_task_scheduler_interval(dag_id, task_id, session=None):
+    task_define = session.query(TaskDefineModel) \
+        .filter(TaskDefineModel.task_id == task_id) \
         .first()
 
     cron_string_up = task_define.schedule_interval
-
     return cron_string_up
+
 
 def is_up_eq_down_plan_exec_date(up_interval, down_interval, down_execution_date):
     """
@@ -45,16 +40,18 @@ def is_up_eq_down_plan_exec_date(up_interval, down_interval, down_execution_date
     if down_plan_execution_date == up_plan_execution_date:
         return True
 
-def landsat_execution_date_fn(execution_date,dag_id,task_id,external_dag_id,external_task_id):
 
-    execution_date = pendulum_convert_datetime(execution_date)
+def landsat_execution_date_fn(logical_date, **kwargs):
+    execution_date = pendulum_convert_datetime(logical_date)
 
     print('landsat-execution_date : {}'.format(execution_date))
     print('landsat-type : {}'.format(type(execution_date)))
+    external_dag_id = kwargs['external_dag_id']
+    external_task_id = kwargs['external_task_id']
+    dag_id = kwargs['ti'].dag_id
+    task_id = kwargs['ti'].task_id
     print('landsat-external_dag_id : {}'.format(external_dag_id))
     print('landsat-external_task_id : {}'.format(external_task_id))
-
-    # todo 非法的 cron 表达式不支持
 
     cron_string_self = get_task_scheduler_interval(dag_id=dag_id, task_id=task_id)
     print('landsat-cron_string_self : {}'.format(cron_string_self))
@@ -99,6 +96,7 @@ def landsat_execution_date_fn(execution_date,dag_id,task_id,external_dag_id,exte
     execution_date_up = datetime_convert_pendulum(execution_date_up)
 
     return execution_date_up
+
 
 if __name__ == '__main__':
     # external_task_id = 't1'

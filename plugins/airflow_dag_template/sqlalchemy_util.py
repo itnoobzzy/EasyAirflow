@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# author:wanglong
 
 from __future__ import absolute_import
 from __future__ import division
@@ -8,15 +7,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from functools import wraps
-
+import os
 import contextlib
 
-from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
 from datetime import datetime
-
 import pendulum
 
 from airflow_dag_template.database import DBManger
@@ -25,12 +20,9 @@ from airflow_dag_template.database import DBManger
 # The base class which our objects will be defined on.
 Base = declarative_base()
 
-# landsat 数据库连接配置，读取 dag 配置信息
-# SQLALCHEMY_URI = 'mysql://root:landsat@10.0.126.58:3306/landsat'
-# SQLALCHEMY_URI = 'mysql://root:landsat@192.168.1.3:3306/landsat'
-SQLALCHEMY_URI = 'mysql://app_landsat_rw:landsat-password@landsat-host:3306/landsat?charset=utf8'
+LANDSAT_SQLALCHEMY_URI = os.environ.get("LANDSAT_SQLALCHEMY_URI")
 
-landsat_db = DBManger(SQLALCHEMY_URI)
+landsat_db = DBManger(LANDSAT_SQLALCHEMY_URI)
 
 
 @contextlib.contextmanager

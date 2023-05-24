@@ -4,15 +4,14 @@ from airflow_dag_template.sqlalchemy_util import props, provide_session
 
 from airflow_dag_template.TaskDefine import TaskDefineModel
 
-@provide_session
-def get_task_define(dag_id,task_id,session=None):
 
-    task_define = session.query(TaskDefineModel)\
-        .filter(TaskDefineModel.task_id == task_id)\
+@provide_session
+def get_task_define(dag_id, task_id, session=None):
+    task_define = session.query(TaskDefineModel) \
+        .filter(TaskDefineModel.task_id == task_id) \
         .first()
 
     return task_define
-
 
 
 def context_base_info(context):
@@ -28,19 +27,16 @@ def context_base_info(context):
 
         print('task_instance : {}'.format(object_dict))
 
-
     if 'ti' in context:
         task_instance = context['ti']
         object_dict = props(task_instance)
 
         print('ti : {}'.format(object_dict))
 
-
     task_id = task_instance.task_id
     dag_id = None
 
     task_define = get_task_define(dag_id, task_id)
-
     owner = task_define.owner
     execution_date = task_instance.execution_date
     start_date = task_instance.start_date
@@ -48,56 +44,43 @@ def context_base_info(context):
     duration = end_date - start_date.replace(tzinfo=None)
     log_url = task_instance.log_url
     state = task_instance.state
-
-
-    # todo 如果错误，还有错误分析，这个需要后面才能做
     notice_dict = {
-         'task_id' : task_id
-        ,'owner' : owner
-        ,'execution_date' : execution_date
-        ,'execution_date_str' : execution_date.isoformat()
-        ,'start_date' : start_date
-        ,'start_date_str' : start_date.isoformat()
-        ,'duration' : duration
-        ,'duration_total_seconds' : duration.total_seconds()
-        ,'log_url' : log_url
-        ,'state' : state
-        ,'end_date' : end_date
+        'task_id': task_id
+        , 'owner': owner
+        , 'execution_date': execution_date
+        , 'execution_date_str': execution_date.isoformat()
+        , 'start_date': start_date
+        , 'start_date_str': start_date.isoformat()
+        , 'duration': duration
+        , 'duration_total_seconds': duration.total_seconds()
+        , 'log_url': log_url
+        , 'state': state
+        , 'end_date': end_date
     }
     print('wanglong-notice_dict : {}'.format(notice_dict))
-
-
-
-    # todo 需要根据 通知配置获取通知的规则
-
     return notice_dict
 
 
 def on_failure_callback_fn(context):
-
     context_base_info(context)
-
 
     pass
 
 
 def on_success_callback_fn(context):
-
     context_base_info(context)
 
     pass
 
 
 def on_retry_callback_fn(context):
-
     context_base_info(context)
 
     pass
 
 
 def sla_miss_callback_fn(dag, task_list, blocking_task_list, slas,
-                                          blocking_tis):
-
+                         blocking_tis):
     """
     文件
     ENV/lib/python3.8/site-packages/airflow/jobs/scheduler_job.py
@@ -124,7 +107,6 @@ def sla_miss_callback_fn(dag, task_list, blocking_task_list, slas,
     print('sla_miss_callback_fn =========>blocking_tis: {}'.format(blocking_tis))
 
     pass
-
 
 
 """
@@ -161,7 +143,4 @@ def sla_miss_callback_fn(dag, task_list, blocking_task_list, slas,
 """
 
 if __name__ == '__main__':
-
-
-
     pass

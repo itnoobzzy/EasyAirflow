@@ -1,10 +1,10 @@
 import copy
 from datetime import timedelta
 
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.mysql_operator import MySqlOperator
-from airflow.sensors.external_task_sensor import ExternalTaskSensor
+from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.providers.mysql.operators.mysql import MySqlOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 
 from airflow_dag_template.DagDefine import DagDefineModel
 from airflow_dag_template.DagTaskDep import DagTaskDepModel
@@ -13,7 +13,6 @@ from airflow_dag_template.callback_funs import on_success_callback_fn, on_failur
     sla_miss_callback_fn
 from airflow_dag_template.external_task_sensor import landsat_execution_date_fn
 from airflow_dag_template.sqlalchemy_util import props, provide_session
-
 
 from operators.landsat_hive_operator import LandsatHiveOperator
 from operators.landsat_http_operator import LandsatHttpOperator
@@ -25,14 +24,10 @@ from operators.landsat_ygg_spark_operator import LandsatYggSparkOperator
 from operators.landsat_ygg_invoke_operator import LandsatYggInvokeOperator
 from sensors.landsat_external_task_sensor import LandsatExternalTaskSensor
 
-
-
-# 需要支持的类型，添加到里面
-
 key_operators = {
-    'DummyOperator': DummyOperator,
+    'EmptyOperator': EmptyOperator,
     'BashOperator': BashOperator,
-    'ExternalTaskSensor':ExternalTaskSensor,
+    'ExternalTaskSensor': ExternalTaskSensor,
     'MySqlOperator': MySqlOperator,
     'LandsatMySqlOperator': LandsatMySqlOperator,
     'LandsatHiveOperator': LandsatHiveOperator,
@@ -42,12 +37,12 @@ key_operators = {
     'LandsatHttpOperator': LandsatHttpOperator,
     'LandsatYggSparkOperator': LandsatYggSparkOperator,
     'LandsatYggInvokeOperator': LandsatYggInvokeOperator,
-    'LandsatExternalTaskSensor':LandsatExternalTaskSensor,
+    'LandsatExternalTaskSensor': LandsatExternalTaskSensor,
 }
 
 # 需要支持的回调函数
 key_callback_fns = {
-    'landsat_execution_date_fn' : landsat_execution_date_fn
+    'landsat_execution_date_fn': landsat_execution_date_fn
 }
 
 
@@ -63,12 +58,9 @@ def taskDefineModel_to_taskDefine(obj):
     # execution_timeout = timedelta(minutes=120)
     obj_to_dict['execution_timeout'] = execution_timeout
 
-
-
     # 私有参数
     private_params = copy.deepcopy(obj_to_dict['private_params'])
-    obj_to_dict.pop('private_params',None)
-
+    obj_to_dict.pop('private_params', None)
 
     # 特殊数据类型才需要，这个和 任务类型有关
     if 'execution_delta_num_minutes' in private_params:
@@ -82,41 +74,17 @@ def taskDefineModel_to_taskDefine(obj):
         execution_date_fn = key_callback_fns[key_callback_fn]
         private_params['execution_date_fn'] = execution_date_fn
 
-
-
-
     obj_to_dict.update(private_params)
 
     # 判断任务类型
     type_operator = obj_to_dict['operator']
     obj_to_dict['type_operator'] = key_operators[type_operator]
 
-    return  obj_to_dict
+    return obj_to_dict
 
-
-
-def dagDefineModel_to_dagDefine(obj):
-    obj_to_dict = props(obj)
-
-    # retry_delay = timedelta(minutes=obj_to_dict['retry_delay_num_minutes'])
-    # obj_to_dict['retry_delay'] = retry_delay
-    #
-    # private_params = copy.deepcopy(obj_to_dict['private_params'])
-    # obj_to_dict.pop('private_params',None)
-    #
-    #
-    # # 特殊数据类型才需要，这个和 任务类型有关
-    # if 'execution_delta_num_minutes' in private_params:
-    #     execution_delta = timedelta(minutes=private_params['execution_delta_num_minutes'])
-    #     private_params['execution_delta'] = execution_delta
-    #
-    #
-    # obj_to_dict.update(private_params)
-
-    return  obj_to_dict
 
 @provide_session
-def get_dag_template_config(dag_id,session=None):
+def get_dag_template_config(dag_id, session=None):
     # dag 和 task 的 配置信息
     config = {
         'dag': {},
@@ -130,7 +98,7 @@ def get_dag_template_config(dag_id,session=None):
         .filter(DagDefineModel.is_publish == True) \
         .first()
 
-    if  dag_define is None:
+    if dag_define is None:
         raise Exception('{dag_id} not publish'.format(dag_id=dag_id))
 
     config['dag'] = dag_define.get_obj_dict()
@@ -144,13 +112,13 @@ def get_dag_template_config(dag_id,session=None):
         }
     """
     config['dag']['default_args'] = {
-            'on_failure_callback': on_failure_callback_fn,
-            'on_success_callback': on_success_callback_fn,
-            'on_retry_callback': on_retry_callback_fn,
-            'sla_miss_callback': sla_miss_callback_fn,
+        'on_failure_callback': on_failure_callback_fn,
+        'on_success_callback': on_success_callback_fn,
+        'on_retry_callback': on_retry_callback_fn,
+        'sla_miss_callback': sla_miss_callback_fn,
 
-            # 'execution_timeout': timedelta(minutes=120),
-        }
+        # 'execution_timeout': timedelta(minutes=120),
+    }
 
     """
     获取 dag 中 start_date 的最小值，end_date 的最大值
@@ -172,11 +140,8 @@ def get_dag_template_config(dag_id,session=None):
         .filter(TaskDefineModel.dag_id == dag_id) \
         .filter(TaskDefineModel.is_publish == True)
 
-
     for res_value in task_define_list:
-
         task_config = taskDefineModel_to_taskDefine(res_value)
-
         config['tasks'].append(task_config)
 
     # 依赖配置
@@ -185,22 +150,13 @@ def get_dag_template_config(dag_id,session=None):
         .filter(DagTaskDepModel.type == 2) \
 
     for res_value in dag_task_dep_list:
-
         dag_task_dep_config = res_value.get_obj_dict()
-
         config['depends'].append(dag_task_dep_config)
 
-    # session.close()
     return config
 
+
 if __name__ == '__main__':
-    # dag_id = 'dag_1'
-    # dag_id = 'dag-Landsat_LandsatHiveOperator_chenry_1608111743665'
     dag_id = 'dag-Landsat_LandsatMySqlOperator__LTAdmin_1603179073040'
-
     config = get_dag_template_config(dag_id)
-
-
     print(config)
-
-    pass
