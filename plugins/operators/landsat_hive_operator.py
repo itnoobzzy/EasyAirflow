@@ -2,7 +2,6 @@
 #
 
 from airflow.models import BaseOperator
-from airflow.utils.decorators import apply_defaults
 
 # 在pycharm 中将plugins 目录设置为 source root 就不会爆红了
 # 因为在 airflow.cfg 配置了plugins 目录
@@ -37,15 +36,16 @@ class LandsatHiveOperator(BaseOperator):
                               }
         }
     """
-    @apply_defaults
+
     def __init__(
             self,
-            hql,
+            *,
+            hql=None,
             hiveserver2_conn_id='hiveserver2_default',
             hiveserver2_conn_configuration=None,
             parameters=None,
-            *args, **kwargs):
-        super(LandsatHiveOperator, self).__init__(*args, **kwargs)
+            **kwargs):
+        super(LandsatHiveOperator, self).__init__(**kwargs)
         self.hql = hql
         self.hiveserver2_conn_id = hiveserver2_conn_id
         self.hiveserver2_conn_configuration = hiveserver2_conn_configuration

@@ -7,13 +7,20 @@ from airflow import DAG
 from airflow_dag_template.config_json import get_dag_template_config
 
 
-dag_id = '_Landsat-dag-6960502732205588480'
+dag_id = 'dag-Landsat_LandsatHiveOperator_zhouzy1_1684924269594-1684924376644'
 
 config = get_dag_template_config(dag_id)
-
+dag_config = {
+    "dag_id": config['dag']['dag_id'],
+    "schedule": config['dag']['schedule_interval'],
+    "start_date": config['dag']['start_date'],
+    "end_date": config['dag']['end_date'],
+    "catchup": config['dag']['catchup'],
+    "default_args": config['dag']['default_args']
+}
 
 # Create the DAG
-with DAG(**config['dag']) as dag:
+with DAG(**dag_config) as dag:
     # 创建的所有实例
     task_instances = {}
 
@@ -24,8 +31,24 @@ with DAG(**config['dag']) as dag:
     for task in task_all:
         type_operator = task['type_operator']
         task_id = task['task_id']
-
-        task_tmp = type_operator(**task)
+        private_params = task['params']
+        task_params = {
+            "task_id": task_id,
+            "pool": task['pool'],
+            "start_date": task['start_date'],
+            "end_date": task['end_date'],
+            "depends_on_past": task['depends_on_past'],
+            "wait_for_downstream": task['wait_for_downstream'],
+            "owner": task['owner'],
+            "queue": task['queue'],
+            "retries": task['retries'],
+            "retry_delay": task['retry_delay'],
+            "execution_timeout": task['execution_timeout'],
+            "trigger_rule": task['trigger_rule']
+        }
+        if private_params:
+            task_params.update(**private_params)
+        task_tmp = type_operator(**task_params)
         task_instances[task_id] = task_tmp
 
     # 在创建dag间的依赖关系

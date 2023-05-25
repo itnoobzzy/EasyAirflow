@@ -52,30 +52,9 @@ def taskDefineModel_to_taskDefine(obj):
     # 重试间隔
     retry_delay = timedelta(minutes=obj_to_dict['retry_delay_num_minutes'])
     obj_to_dict['retry_delay'] = retry_delay
-
-    # todo 运行超时时间，需要在 表中增加字段,现在先写死
     execution_timeout = timedelta(minutes=obj_to_dict['execution_timeout_num_minutes'])
-    # execution_timeout = timedelta(minutes=120)
     obj_to_dict['execution_timeout'] = execution_timeout
-
-    # 私有参数
-    private_params = copy.deepcopy(obj_to_dict['private_params'])
-    obj_to_dict.pop('private_params', None)
-
-    if private_params:
-        # 特殊数据类型才需要，这个和 任务类型有关
-        if 'execution_delta_num_minutes' in private_params:
-            execution_delta = timedelta(minutes=private_params['execution_delta_num_minutes'])
-            private_params['execution_delta'] = execution_delta
-
-        # 针对外部依赖使用的，计算依赖的函数
-        if 'execution_date_fn' in private_params:
-            key_callback_fn = private_params['execution_date_fn']
-
-            execution_date_fn = key_callback_fns[key_callback_fn]
-            private_params['execution_date_fn'] = execution_date_fn
-
-        obj_to_dict.update(private_params)
+    obj_to_dict['params'] = obj_to_dict['private_params']
 
     # 判断任务类型
     type_operator = obj_to_dict['operator']
