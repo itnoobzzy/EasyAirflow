@@ -1,4 +1,3 @@
-import copy
 from datetime import timedelta
 
 from airflow.operators.bash import BashOperator
@@ -46,17 +45,19 @@ key_callback_fns = {
 }
 
 
-def taskDefineModel_to_taskDefine(obj):
+def get_task_config(obj):
     obj_to_dict = props(obj)
 
-    # 重试间隔
+    # 任务重试配置
     retry_delay = timedelta(minutes=obj_to_dict['retry_delay_num_minutes'])
     obj_to_dict['retry_delay'] = retry_delay
     execution_timeout = timedelta(minutes=obj_to_dict['execution_timeout_num_minutes'])
     obj_to_dict['execution_timeout'] = execution_timeout
+
+    # 不同 operator 的私有任务参数
     obj_to_dict['params'] = obj_to_dict['private_params']
 
-    # 判断任务类型
+    # 任务对应的 operator
     type_operator = obj_to_dict['operator']
     obj_to_dict['type_operator'] = key_operators[type_operator]
 
@@ -65,7 +66,13 @@ def taskDefineModel_to_taskDefine(obj):
 
 @provide_session
 def get_dag_template_config(dag_id, session=None):
-    # dag 和 task 的 配置信息
+    """
+    根据 dag_id 查询出 dag 的配置信息，以及该 dag 中的 task 的配置信息
+    从 task_define 表中获取 task 的配置信息， 从 dag_define 表中获取 dag 的配置信息
+    :param dag_id:
+    :param session:
+    :return:
+    """
     config = {
         'dag': {},
         "tasks": [],
@@ -82,33 +89,19 @@ def get_dag_template_config(dag_id, session=None):
         raise Exception('{dag_id} not publish'.format(dag_id=dag_id))
 
     config['dag'] = dag_define.get_obj_dict()
-
-    # 添加 default arg
-    """
-            'default_args':{
-            'owner': 'wanglong',
-            'start_date':'2019-01-01T00:00:00Z',
-            'on_success_callback':on_success_callback_fn
-        }
-    """
     config['dag']['default_args'] = {
         'on_failure_callback': on_failure_callback_fn,
         'on_success_callback': on_success_callback_fn,
         'on_retry_callback': on_retry_callback_fn,
         'sla_miss_callback': sla_miss_callback_fn,
-
-        # 'execution_timeout': timedelta(minutes=120),
     }
 
-    """
-    获取 dag 中 start_date 的最小值，end_date 的最大值
-    """
     from sqlalchemy.sql import func
     qry = session.query(func.min(TaskDefineModel.start_date).label("min_start_date"),
                         func.max(TaskDefineModel.end_date).label("max_end_date"),
                         ) \
         .filter(TaskDefineModel.dag_id == dag_id) \
-        .filter(TaskDefineModel.is_publish == True)
+        .filter(TaskDefineModel.is_publish is True)
     res = qry.one()
     min_start_date = res.min_start_date
     max_end_date = res.max_end_date
@@ -118,13 +111,13 @@ def get_dag_template_config(dag_id, session=None):
     # task 配置
     task_define_list = session.query(TaskDefineModel) \
         .filter(TaskDefineModel.dag_id == dag_id) \
-        .filter(TaskDefineModel.is_publish == True)
+        .filter(TaskDefineModel.is_publish is True)
 
     for res_value in task_define_list:
-        task_config = taskDefineModel_to_taskDefine(res_value)
+        task_config = get_task_config(res_value)
         config['tasks'].append(task_config)
 
-    # 依赖配置
+    # DagTaskDepModel 保存的是 dag 内 task 的依赖关系
     dag_task_dep_list = session.query(DagTaskDepModel) \
         .filter(DagTaskDepModel.dag_id == dag_id) \
         .filter(DagTaskDepModel.type == 2) \

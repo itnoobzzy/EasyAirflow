@@ -2,6 +2,7 @@
 from airflow.models import ID_LEN
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON
 
+from airflow_dag_template.sqlalchemy_util import provide_session
 from airflow_dag_template.sqlalchemy_util import Base, props
 
 
@@ -42,5 +43,12 @@ class TaskDefineModel(Base):
         obj_to_dict = props(self)
         return str(obj_to_dict)
 
-
+    @classmethod
+    @provide_session
+    def get_task_define(cls, dag_id, task_id, session=None):
+        task_define = session.query(TaskDefineModel) \
+            .filter(TaskDefineModel.task_id == task_id) \
+            .filter(TaskDefineModel.dag_id == dag_id) \
+            .first()
+        return task_define
 
