@@ -16,6 +16,7 @@ dag_config = {
     "start_date": config['dag']['start_date'],
     "end_date": config['dag']['end_date'],
     "catchup": config['dag']['catchup']
+    # "default_args": config['dag']['default_args']
 }
 
 # Create the DAG
