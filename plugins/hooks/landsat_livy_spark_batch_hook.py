@@ -28,8 +28,6 @@ from requests.auth import HTTPBasicAuth
 from airflow.hooks.base import BaseHook
 from airflow.utils.operator_helpers import AIRFLOW_VAR_NAME_FORMAT_MAPPING
 
-from hooks.LivyBatches import polling_intervals, BatchesState
-
 HIVE_QUEUE_PRIORITIES = ['VERY_HIGH', 'HIGH', 'NORMAL', 'LOW', 'VERY_LOW']
 
 
@@ -156,6 +154,7 @@ class LandsatLivySparkBatchHook(BaseHook):
                         )
             self.batchId = batchId
             # 获取任务信息
+            from hooks.LivyBatches import polling_intervals, BatchesState
             intervals = polling_intervals([1, 2, 3, 5, 8], 10)
 
             while state not in [BatchesState.SUCCESS.value, BatchesState.DEAD.value]:

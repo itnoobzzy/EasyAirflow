@@ -3,12 +3,11 @@
 import json
 
 from airflow.exceptions import AirflowException
-from airflow.hooks.http_hook import HttpHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-from hooks.landsat_http_hook import LandsatHttpHook
-from operators.utils.var_parse import VarParse
+from plugins.hooks.landsat_http_hook import LandsatHttpHook
+from plugins.operators.utils.var_parse import VarParse
 
 
 class LandsatHttpOperator(BaseOperator):

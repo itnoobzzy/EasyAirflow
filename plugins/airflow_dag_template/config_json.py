@@ -13,15 +13,15 @@ from airflow_dag_template.callback_funs import on_success_callback_fn, on_failur
 from airflow_dag_template.external_task_sensor import landsat_execution_date_fn
 from airflow_dag_template.sqlalchemy_util import props, provide_session
 
-from operators.landsat_hive_operator import LandsatHiveOperator
-from operators.landsat_http_operator import LandsatHttpOperator
-from operators.landsat_livy_spark_batch_operator import LandsatLivySparkBatchOperator
-from operators.landsat_livy_spark_sql_operator import LandsatLivySparkSQLOperator
-from operators.landsat_mysql_operator import LandsatMySqlOperator
-from operators.landsat_presto_operator import LandsatPrestoOperator
-from operators.landsat_ygg_spark_operator import LandsatYggSparkOperator
-from operators.landsat_ygg_invoke_operator import LandsatYggInvokeOperator
-from sensors.landsat_external_task_sensor import LandsatExternalTaskSensor
+from plugins.operators.landsat_hive_operator import LandsatHiveOperator
+from plugins.operators.landsat_http_operator import LandsatHttpOperator
+from plugins.operators.landsat_livy_spark_batch_operator import LandsatLivySparkBatchOperator
+from plugins.operators.landsat_livy_spark_sql_operator import LandsatLivySparkSQLOperator
+from plugins.operators.landsat_mysql_operator import LandsatMySqlOperator
+from plugins.operators.landsat_presto_operator import LandsatPrestoOperator
+from plugins.operators.landsat_ygg_spark_operator import LandsatYggSparkOperator
+from plugins.operators.landsat_ygg_invoke_operator import LandsatYggInvokeOperator
+from plugins.sensors.landsat_external_task_sensor import LandsatExternalTaskSensor
 
 key_operators = {
     'EmptyOperator': EmptyOperator,
@@ -101,7 +101,7 @@ def get_dag_template_config(dag_id, session=None):
                         func.max(TaskDefineModel.end_date).label("max_end_date"),
                         ) \
         .filter(TaskDefineModel.dag_id == dag_id) \
-        .filter(TaskDefineModel.is_publish is True)
+        .filter(TaskDefineModel.is_publish == True)
     res = qry.one()
     min_start_date = res.min_start_date
     max_end_date = res.max_end_date
@@ -111,7 +111,7 @@ def get_dag_template_config(dag_id, session=None):
     # task 配置
     task_define_list = session.query(TaskDefineModel) \
         .filter(TaskDefineModel.dag_id == dag_id) \
-        .filter(TaskDefineModel.is_publish is True)
+        .filter(TaskDefineModel.is_publish == True)
 
     for res_value in task_define_list:
         task_config = get_task_config(res_value)
