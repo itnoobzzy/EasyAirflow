@@ -2,7 +2,7 @@ from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-from plugins.operators.utils.var_parse import VarParse
+from operators.utils.var_parse import VarParse
 
 
 class LandsatMySqlOperator(BaseOperator):

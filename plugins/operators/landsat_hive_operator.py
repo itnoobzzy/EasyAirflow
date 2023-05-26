@@ -5,7 +5,7 @@ from airflow.models import BaseOperator
 
 # 在pycharm 中将plugins 目录设置为 source root 就不会爆红了
 # 因为在 airflow.cfg 配置了plugins 目录
-from plugins.operators.utils.var_parse import VarParse
+from operators.utils.var_parse import VarParse
 
 
 class LandsatHiveOperator(BaseOperator):
@@ -61,7 +61,7 @@ class LandsatHiveOperator(BaseOperator):
         self.hql = VarParse.split_sql(self.hql)
         self.log.info('Split SQL really: %s', self.hql)
         try:
-            from plugins.hooks.landsat_hive_hook import LandsatHiveServer2Hook
+            from hooks.landsat_hive_hook import LandsatHiveServer2Hook
             self.hook = LandsatHiveServer2Hook(hiveserver2_conn_id=self.hiveserver2_conn_id,
                                                hiveserver2_conn_configuration=self.hiveserver2_conn_configuration)
             self.hook.run(self.hql, parameters=self.parameters)

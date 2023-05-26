@@ -28,8 +28,8 @@ from requests.auth import HTTPBasicAuth
 from airflow.hooks.base import BaseHook
 from airflow.utils.operator_helpers import AIRFLOW_VAR_NAME_FORMAT_MAPPING
 
-from plugins.hooks.LivyBatches import polling_intervals, BatchesState
-from plugins.hooks.YggClient import YggState
+from hooks.LivyBatches import polling_intervals, BatchesState
+from hooks.YggClient import YggState
 
 HIVE_QUEUE_PRIORITIES = ['VERY_HIGH', 'HIGH', 'NORMAL', 'LOW', 'VERY_LOW']
 
