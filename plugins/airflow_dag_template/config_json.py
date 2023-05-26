@@ -61,6 +61,13 @@ def get_task_config(obj):
     type_operator = obj_to_dict['operator']
     obj_to_dict['type_operator'] = key_operators[type_operator]
 
+    # external_task 依赖外部任务的配置，计算上游影子任务的函数
+    if 'execution_date_fn' in obj_to_dict['private_params']:
+        key_callback_fn = obj_to_dict['private_params']['execution_date_fn']
+
+        execution_date_fn = key_callback_fns[key_callback_fn]
+        obj_to_dict['params']['execution_date_fn'] = execution_date_fn
+
     return obj_to_dict
 
 

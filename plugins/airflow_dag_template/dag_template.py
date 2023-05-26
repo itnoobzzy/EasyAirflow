@@ -7,7 +7,7 @@ from airflow import DAG
 from airflow_dag_template.config_json import get_dag_template_config
 
 
-dag_id = 'dag-Landsat_LandsatHiveOperator_zhouzy1_1684924269594-1684924376644'
+dag_id = "{}"
 
 config = get_dag_template_config(dag_id)
 dag_config = {
