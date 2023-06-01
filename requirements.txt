@@ -1,0 +1,16 @@
+celery
+flower
+pymysql
+mysqlclient
+redis
+pytest
+livy==0.6.0
+apache-airflow==2.6.0
+apache-airflow-providers-mysql
+apache-airflow-providers-apache-hive
+loguru==0.5.1
+opencensus
+opencensus-ext-requests
+opencensus-ext-sqlalchemy
+pathlib2
+Flask-RESTful

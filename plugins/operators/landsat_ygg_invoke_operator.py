@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 #
 import json
-from typing import Any, Dict, List
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 from operators.utils.encryption import str_decryption, str_encryption
 from operators.utils.var_parse import VarParse
-from datetime import datetime
 
 
 class LandsatYggInvokeOperator(BaseOperator):
@@ -81,20 +79,12 @@ class LandsatYggInvokeOperator(BaseOperator):
                     data=self.data
                 )
 
-
-
             self.log.info('======> Ygg log start:')
-
             self.log.info('======> Ygg log submit:')
-            # app_log = '\n'.join(app_submit_log)
             self.log.info('{}'.format(app_submit_log))
-
             self.log.info('======> Ygg log execution:')
-            # app_log = '\n'.join(app_execution_log)
             self.log.info('{}'.format(app_execution_log))
-
             self.log.info('======> Ygg log end.')
-
             if app_state is False:
                 raise
 
@@ -104,9 +94,8 @@ class LandsatYggInvokeOperator(BaseOperator):
 
         self.log.info("Done.")
 
-
     def on_kill(self):
         if self.hook:
             self.hook.kill(
-                    app_type=self.app_type
+                app_type=self.app_type
             )
