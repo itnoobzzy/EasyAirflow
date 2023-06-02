@@ -14,7 +14,7 @@ from endpoints.models.task_instance_model import TaskInstance
 from endpoints.models.task_model import TaskDefine
 from endpoints.models.taskinstance_type_model import TaskInstanceType
 from endpoints.models.taskreschedule_model import TaskReschedule
-from config import SERVE_LOG_PROT, AIRFLOW_UPLOAD_DAG_HOST, AIRFLOW_UPLOAD_DAG_PORT
+from config import SERVE_LOG_PROT
 from utils.airflow_database import airflow_provide_session
 from utils.airflow_web_task_handlers import TaskWebHandlers
 from utils.state import State
@@ -288,20 +288,12 @@ class TaskHandlers(object):
         # 获取 res_extra 信息，提取 host_name
         res_extra = res_extra_id[0]
         hostname = json.loads(res_extra)["host_name"]
-
-
         return hostname
 
     @staticmethod
     @airflow_provide_session
-    def direct_run_task(dag_id,task_id,execution_date, host=AIRFLOW_UPLOAD_DAG_HOST, port=AIRFLOW_UPLOAD_DAG_PORT,
-                         session=None):
-        # TaskInstance.direct_run_task_instance(host, port, dag_id,task_id,execution_date)
+    def direct_run_task(dag_id,task_id,execution_date, host, port, session=None):
         TaskWebHandlers.direct_run_task_instance(host, port, dag_id,task_id,execution_date)
-
-
-
-
 
     @staticmethod
     def complement_task_instances( task_id, execution_next_date_timestamp_list):
@@ -331,5 +323,3 @@ class TaskHandlers(object):
 
             # 运行指定任务实例
             TaskHandlers.direct_run_task(dag_id, task_id, execution_date)
-
-        pass

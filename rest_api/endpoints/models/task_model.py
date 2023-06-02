@@ -184,11 +184,16 @@ class TaskDefine(Base, DeletionMixin, AuditMixinNullable):
     @staticmethod
     @landsat_provide_session
     def cancel_publish_task(id_or_task_id, session=None):
+        """
+        下线任务，并且下线任务依赖的影子任务
+        :param id_or_task_id:
+        :param session:
+        :return:
+        """
         task = TaskDefine.get_task(id_or_task_id)
         task.is_publish = False
         session.merge(task)
 
-        # 取消 该任务的所有 外部依赖任务
         task_id = task.task_id
         upstream_task_ids = DagTaskDependence.get_task_up_depends(task_id)
         for upstream_task_id in upstream_task_ids:

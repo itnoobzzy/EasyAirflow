@@ -13,7 +13,7 @@ from airflow import DAG
 from airflow_dag_template.config_json import get_dag_template_config
 
 
-dag_id = "{dag_id_replace}"
+dag_id = "{dag_id}"
 
 config = get_dag_template_config(dag_id)
 dag_config = {
@@ -74,20 +74,25 @@ with DAG(**dag_config) as dag:
 class DagHandlers(object):
 
     @staticmethod
-    def upload_dag_local(airflow_dag_base_dir, dag_id):
-        dag_str = dag_template_str.replace("dag_id_replace", dag_id)
+    def _get_dag_file_path(airflow_dag_base_dir, dag_id):
         # 将 DAG 文件写入对应的目录，先从配置文件中读取指定的目录，如果没有读取到，写入当前项目的 dags 目录下
         if not airflow_dag_base_dir:
             airflow_dag_base_dir = os.path.dirname(os.path.dirname(os.path.dirname(
                 os.path.realpath(__file__)))) + '/dags'
         file_path = '{}/{}.py'.format(airflow_dag_base_dir, dag_id)
+        return file_path
+
+    @staticmethod
+    def upload_dag_local(airflow_dag_base_dir, dag_id):
+        dag_str = dag_template_str.replace("{dag_id}", dag_id)
+        file_path = DagHandlers()._get_dag_file_path(airflow_dag_base_dir, dag_id)
         with open(file_path, "w+") as file_write:
             file_write.write(dag_str)
         logger.info("Write: %s file " % file_path)
 
     @staticmethod
     def delete_dag_local(airflow_dag_base_dir, dag_id):
-        file_path = '{}/{}.py'.format(airflow_dag_base_dir, dag_id)
+        file_path = DagHandlers()._get_dag_file_path(airflow_dag_base_dir, dag_id)
         if os.path.isfile(file_path):
             os.remove(file_path)
             logger.info("Remove: %s file " % file_path)

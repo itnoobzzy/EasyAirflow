@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 import logging
-import os
 
 from sqlalchemy import (Column,
                         String, Boolean,
                         JSON, DateTime)
 
 from datetime import datetime
-from config import DAGS_DIR, AIRFLOW_UPLOAD_DAG_HOST, AIRFLOW_UPLOAD_DAG_PORT, AIRFLOW_DAGS_DIR
-from utils.airflow_web_dag_handlers import DagHandlers, dag_template_str
+from config import DAGS_DIR
+from utils.airflow_web_dag_handlers import DagHandlers
 from utils.database import Base, landsat_provide_session
 from utils.exceptions import DagsException
 
@@ -90,18 +89,11 @@ class DagDefine(Base):
     @staticmethod
     @landsat_provide_session
     def delete_dag_by_dag_id(dag_id, session=None):
+        """删除 dag 文件"""
         dag_define = DagDefine.get_dag(dag_id=dag_id)
         if dag_define is None:
             logger.error('dag is not exist')
             raise Exception('dag_id:{} is not exist'.format(dag_id))
-
-        # 先删除 dag 文件
-        # 对应请求 Airflow  webserver api 不能清除元数据
-        # 删除超时，先不调用删除接口
-        # DagHandlers.delete_dag(host=AIRFLOW_UPLOAD_DAG_HOST, port=AIRFLOW_UPLOAD_DAG_PORT, dag_id=dag_id)
-        DagHandlers.delete_dag_local(airflow_dag_base_dir=AIRFLOW_DAGS_DIR, dag_id=dag_id)
-
-        # 再注销
         dag_define.is_publish = False
         dag_define.upsert()
-
+        DagHandlers.delete_dag_local(airflow_dag_base_dir=DAGS_DIR, dag_id=dag_id)

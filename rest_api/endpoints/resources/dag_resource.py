@@ -150,35 +150,24 @@ class DagResource(Resource):
 
     @safe
     def delete(self):
-
+        """
+        撤销发布 DAG
+        1. 删除 dag 信息
+        2. 下线 dag 下所有的任务及影子任务
+        """
         parser = reqparse.RequestParser()
         parser.add_argument('dag_id', type=str)
 
         args = parser.parse_args()
         dag_id = args['dag_id']
 
-        """
-        下线 dag,要支持事务
-        1. 下线 dag
-        2. 下线 dag 中所有的 task，包括影子任务
-        3. 删除对应的任务依赖
-        """
         DagDefine.delete_dag_by_dag_id(dag_id=dag_id)
-
         task_defines = TaskDefine.get_tasks_by_dag_id(dag_id)
         for task_define in task_defines:
             task_id = task_define.task_id
             TaskDefine.cancel_publish_task(task_id)
 
-        response_data = {
-            'status': 200,
-            "data": {
-                "dag_id": dag_id
-            }
-
-        }
-        http_status_code = 200
-        return response_data, http_status_code
+        return {'status': 200, "data": {"dag_id": dag_id}}
 
 
 class DagFile(Resource):
