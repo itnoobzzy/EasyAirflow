@@ -43,8 +43,8 @@ api.add_resource(DagRunPlanExecutionDateResource, '/dagruns/plan_execution_date'
 api.add_resource(DagRunTaskInstancesResource, '/dagruns/task_instances')
 api.add_resource(DagRunLastResource, '/dagruns/latest')
 api.add_resource(DagRunSummaryResource, '/dagruns/summary')
-api.add_resource(DagRunListResource, '/dagruns')
-api.add_resource(DagRunResource, '/dagrun')
+api.add_resource(DagRunListResource, '/dag_runs')
+api.add_resource(DagRunResource, '/dag_run')
 
 api.add_resource(TaskInstanceSummaryResource, '/task_instances/summary')
 api.add_resource(TaskInstanceListResource, '/task_instances')

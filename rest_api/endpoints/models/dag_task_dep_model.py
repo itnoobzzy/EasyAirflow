@@ -37,7 +37,7 @@ class DagTaskDependence(Base):
     def upsert(self, session=None):
         task_id = self.task_id
         upstream_task_id = self.upstream_task_id
-        if DagTaskDependence.is_exist(task_id,upstream_task_id):
+        if DagTaskDependence.is_exist(task_id, upstream_task_id):
             session.merge(self)
         else:
             session.add(self)
@@ -68,11 +68,16 @@ class DagTaskDependence(Base):
 
     @classmethod
     @landsat_provide_session
-    def get_all_downstream_recursive(cls, dag_id,upstream_task_id, session=None):
-
+    def get_all_downstream_recursive(cls, dag_id, upstream_task_id, session=None):
+        """
+        获取所有的下游任务，包括下游任务的下游任务
+        :param dag_id:
+        :param upstream_task_id:
+        :param session:
+        :return:
+        """
         all_task_dep = session.query(DagTaskDependence). \
             filter(DagTaskDependence.dag_id == dag_id).all()
-
 
         graph_t = GraphTraverse()
 
@@ -102,7 +107,7 @@ class DagTaskDependence(Base):
 
     @staticmethod
     @landsat_provide_session
-    def get_task_depends_by_type(task_id, upstream_task_id,type=USER_DEP_TYPE, session=None):
+    def get_task_depends_by_type(task_id, upstream_task_id, type=USER_DEP_TYPE, session=None):
         TD = DagTaskDependence
 
         qry = session.query(DagTaskDependence).filter(
@@ -366,7 +371,6 @@ class DagTaskDependence(Base):
         session.add(task_dep)
         session.commit()
 
-
     @classmethod
     @landsat_provide_session
     def external_get_task_up_depends(cls, task_id, session=None):
@@ -378,15 +382,11 @@ class DagTaskDependence(Base):
         :param session:
         :return:
         """
-
         type = cls.AIRFLOW_DEP_TYPE
         TD = DagTaskDependence
-
         qry = session.query(TD).filter(
-            # Task.dag_id == dag_id,
             TD.task_id == task_id,
             TD.type == type
-
         )
 
         tds = qry.all()
@@ -396,7 +396,6 @@ class DagTaskDependence(Base):
             task_ids.append(td.upstream_task_id)
 
         return task_ids
-        pass
 
     # 获取所有用户配置的任务依赖
     @classmethod
@@ -589,4 +588,3 @@ class DagTaskDependence(Base):
         for up_task_id in up_task_ids:
             all_up_task_ids += cls.recursion_get_task_up_depends(up_task_id)
         return all_up_task_ids
-

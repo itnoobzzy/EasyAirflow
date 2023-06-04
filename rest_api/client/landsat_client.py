@@ -16,6 +16,7 @@ class AirflowClient:
 
     def __init__(self, airflow_host):
         self.add_connections_url = 'POST', airflow_host + '/api/v1/connections'
+        self.get_dag_runs_url = 'POST', airflow_host + '/api/v1/dags/{}/dagRuns'
 
     def do_request(self,
                    url,

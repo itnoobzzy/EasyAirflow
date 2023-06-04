@@ -135,8 +135,8 @@ class DagResource(Resource):
 
         self._cancel_task(dag_id)
         self._save_dag_info(dag_id, schedule_interval)
-        self._save_task_info(tasks, dag_id, schedule_interval)
         self._save_task_depends(task_depends, schedule_interval)
+        self._save_task_info(tasks, dag_id, schedule_interval)
         self._sync_dag_file(dag_id)
 
         return {

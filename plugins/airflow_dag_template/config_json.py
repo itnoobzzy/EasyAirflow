@@ -96,12 +96,12 @@ def get_dag_template_config(dag_id, session=None):
         raise Exception('{dag_id} not publish'.format(dag_id=dag_id))
 
     config['dag'] = dag_define.get_obj_dict()
-    config['dag']['default_args'] = {
-        'on_failure_callback': on_failure_callback_fn,
-        'on_success_callback': on_success_callback_fn,
-        'on_retry_callback': on_retry_callback_fn,
-        'sla_miss_callback': sla_miss_callback_fn,
-    }
+    # config['dag']['default_args'] = {
+    #     'on_failure_callback': on_failure_callback_fn,
+    #     'on_success_callback': on_success_callback_fn,
+    #     'on_retry_callback': on_retry_callback_fn,
+    #     'sla_miss_callback': sla_miss_callback_fn,
+    # }
 
     from sqlalchemy.sql import func
     qry = session.query(func.min(TaskDefineModel.start_date).label("min_start_date"),
@@ -137,6 +137,6 @@ def get_dag_template_config(dag_id, session=None):
 
 
 if __name__ == '__main__':
-    dag_id = 'dag-Landsat_LandsatHiveOperator_zhouzy1_1684924269594-1684924376644'
+    dag_id = '_Landsat-dag-7069854774769745920'
     config = get_dag_template_config(dag_id)
     print(config)

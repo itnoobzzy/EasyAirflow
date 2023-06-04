@@ -6,14 +6,15 @@ import datetime
 import json
 
 from croniter import croniter
+from airflow.models.taskinstance import TaskReschedule
+from airflow.jobs.job import Job as BaseJob
 
-from endpoints.models.basejob_model import BaseJob
+import config
 from endpoints.models.dagrun_model import DagRun
 from endpoints.models.log_model import Log
 from endpoints.models.task_instance_model import TaskInstance
 from endpoints.models.task_model import TaskDefine
 from endpoints.models.taskinstance_type_model import TaskInstanceType
-from endpoints.models.taskreschedule_model import TaskReschedule
 from config import SERVE_LOG_PROT
 from utils.airflow_database import airflow_provide_session
 from utils.airflow_web_task_handlers import TaskWebHandlers
@@ -43,54 +44,36 @@ class TaskHandlers(object):
                 if ti.job_id:
                     ti.state = State.SHUTDOWN
                     job_ids.append(ti.job_id)
-
                 ti.state = State.SHUTDOWN
                 session.merge(ti)
             else:
-                # task_id = ti.task_id
-                # if dag and dag.has_task(task_id):
-                #     task = dag.get_task(task_id)
-                #     task_retries = task.retries
-                #     ti.max_tries = ti.try_number + task_retries - 1
-                # else:
-                #     # Ignore errors when updating max_tries if dag is None or
-                #     # task not found in dag since database records could be
-                #     # outdated. We make max_tries the maximum value of its
-                #     # original max_tries or the last attempted try number.
-                #     ti.max_tries = max(ti.max_tries, ti.prev_attempted_tries)
                 ti.state = State.NONE
                 session.merge(ti)
             # Clear all reschedules related to the ti to clear
-            TR = TaskReschedule
-            session.query(TR).filter(
-                TR.dag_id == ti.dag_id,
-                TR.task_id == ti.task_id,
-                TR.execution_date == ti.execution_date,
-                TR.try_number == ti._try_number
-            ).delete()
+            tr = session.query(TaskReschedule).filter(
+                TaskReschedule.dag_id == ti.dag_id,
+                TaskReschedule.task_id == ti.task_id,
+                TaskReschedule.execution_date == ti.execution_date,
+                TaskReschedule.try_number == ti._try_number
+            ).all()
+            for t in tr:
+                session.delete(t)
 
         if job_ids:
-
             for job in session.query(BaseJob).filter(BaseJob.id.in_(job_ids)).all():
                 job.state = State.SHUTDOWN
-
                 session.merge(job)
 
         if activate_dag_runs and tis:
-
             drs = session.query(DagRun).filter(
                 DagRun.dag_id.in_({ti.dag_id for ti in tis}),
                 DagRun.execution_date.in_({ti.execution_date for ti in tis}),
             ).all()
 
             for dr in drs:
-                print(drs)
-                # dr._state = State.RUNNING
                 dr.state = State.RUNNING
-                dr.start_date = datetime.datetime.now()
-
+                dr.start_date = datetime.datetime.now(tz=config.TIMEZONE)
                 session.merge(dr)
-
         session.commit()
 
     @staticmethod

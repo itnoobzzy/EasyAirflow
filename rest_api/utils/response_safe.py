@@ -24,8 +24,6 @@ def json_format(o):
     elif isinstance(o, dict):
         r = list()
         for k, i in o.items():
-            # if type(k) is str and k[0] is '_':
-            #     continue f'\\001\'
             r.append((k, json_format(i)))
         return dict(r)
     else:

@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# author:wanglong
 import logging
+from datetime import datetime
 
+import config
 from endpoints.handlers.airflow_task_handlers import TaskHandlers
 from endpoints.models.dag_task_dep_model import DagTaskDependence
-from endpoints.models.task_instance_model import TaskInstance
+from endpoints.models.task_instance_model import EasyAirflowTaskInstance
 from endpoints.models.task_model import TaskDefine
-from endpoints.models.taskinstance_next_model import TaskInstanceNext
 from endpoints.models.taskinstance_type_model import TaskInstanceType
 from utils.state import State
-from utils.times import dt2ts
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +78,7 @@ class TaskDefineHandlers(object):
 
     @staticmethod
     def get_task_instance(
+            dag_id,
             task_ids,
             states,
             min_plan_execution_date,
@@ -86,134 +86,70 @@ class TaskDefineHandlers(object):
             page_size,
             page_num,
             reverse,
-            order_by_field,
-            instance_type,
+            order_by_field
     ):
+        query_params = {"dag_id": dag_id}
+        if min_plan_execution_date:
+            min_plan_execution_date = datetime.fromtimestamp(min_plan_execution_date / 1000, tz=config.TIMEZONE)
+            query_params["min_execution_date"] = min_plan_execution_date
+        if max_plan_execution_date:
+            max_plan_execution_date = datetime.fromtimestamp(max_plan_execution_date / 1000, tz=config.TIMEZONE)
+            query_params["max_execution_date"] = max_plan_execution_date
+        if order_by_field and reverse:
+            query_params["sort_field"] = order_by_field
+            query_params["direction"] = reverse
+        if not states:
+            query_params["states"] = State.task_states
+        if task_ids:
+            query_params["task_ids"] = task_ids
+        if page_num and page_size:
+            query_params["page_num"] = page_num
+            query_params["page_size"] = page_size
 
-
-        # 获取补数据的 实例信息
-        ti_type_info_dict_list = TaskDefineHandlers.get_ti_type_info_dict(task_ids,
-                                                                          min_execution_date=None,
-                                                                          max_execution_date=None)
-        # # 所有补数据(task_id, execution)信息
-        ti_type_tuple_list = [(i.get("task_id"), i.get("execution_date"))
-                              for _, i in ti_type_info_dict_list.items()]
-        cycle_type = TaskInstanceType.CYCLE_TYPE
-        filldata_type = TaskInstanceType.FILL_DATA_TYPE
-
-        type_params = {"instance_type": instance_type,
-                       "cycle_type": cycle_type,
-                       "filldata_type": filldata_type,
-                       "ti_type_tuple_list": ti_type_tuple_list}
-
-
-        instance_params = {"task_ids": task_ids,
-                           "min_execution_date": min_plan_execution_date,
-                           "max_execution_date": max_plan_execution_date,
-                           "page_num": page_num,
-                           "page_size": page_size,
-                           "sort_field": order_by_field,
-                           "direction": reverse,
-                           "state": states
-                           }
-
-        # # 根据next_execution_date条件进行关联查询 TaskInstance和TaskInstanceNext 已分页
-        paged_all_instance_info = TaskInstance.get_task_instance_with_next(**type_params,
-                                                                           **instance_params)
-        count_instance_info = TaskInstance.get_task_instance_with_next(**type_params,
-                                                                       **instance_params,
-                                                                       count_num=True)
-
-
-        # 组装分页查询的数据
-        ti_info_dict_list = []
-        for instance_info in paged_all_instance_info:
-            if instance_info.TaskInstance is None or instance_info.TaskInstanceNext is None:
-                continue
-            task_instance_dict = instance_info.TaskInstance.props()
-            task_instance_next_dict = instance_info.TaskInstanceNext.props()
-
-            # 组装信息
-            task_instance_dict = {**task_instance_dict, **task_instance_next_dict}
-
-            ti_info_dict_list.append(task_instance_dict)
-
-        return ti_info_dict_list, count_instance_info
-
+        count, ti_list = EasyAirflowTaskInstance.get_ti_list(**query_params)
+        list_infos = [{
+            "dag_id": i[0].dag_id,
+            "task_id": i[0].task_id,
+            "run_id": i[0].run_id,
+            "data_interval_start": int(i[1].data_interval_start.timestamp() * 1000),
+            "data_interval_end": int(i[1].data_interval_end.timestamp() * 1000),
+            "start_date": int(i[0].start_date.timestamp() * 1000) if i[0].start_date else None,
+            "end_date": int(i[0].end_date.timestamp() * 1000) if i[0].end_date else None,
+            "duration": i[0].duration,
+            "state": i[0].state,
+            "try_number": i[0].try_number,
+            "execution_date": int(i[1].execution_date.timestamp() * 1000),
+            "external_trigger": i[1].external_trigger,
+            "run_type": i[1].run_type,
+            "pool": i[0].pool,
+            "queue": i[0].queue,
+            "priority_weight": i[0].priority_weight
+        } for i in ti_list]
+        return count, list_infos
 
     @staticmethod
     def get_task_instance_summary(
+            dag_id,
             task_ids,
             states,
             min_plan_execution_date,
-            max_plan_execution_date,
-            instance_type,
+            max_plan_execution_date
     ):
-
-        # 获取补数据的 实例信息
-        ti_type_info_dict_list = TaskDefineHandlers.get_ti_type_info_dict(task_ids,
-                                                                          min_execution_date=None,
-                                                                          max_execution_date=None)
-        # # 所有补数据(task_id, execution)信息
-        ti_type_tuple_list = [(i.get("task_id"), i.get("execution_date"))
-                              for _, i in ti_type_info_dict_list.items()]
-        cycle_type = TaskInstanceType.CYCLE_TYPE
-        filldata_type = TaskInstanceType.FILL_DATA_TYPE
-
-        if states is None:
+        if min_plan_execution_date:
+            min_plan_execution_date = datetime.fromtimestamp(min_plan_execution_date / 1000, tz=config.TIMEZONE)
+        if max_plan_execution_date:
+            max_plan_execution_date = datetime.fromtimestamp(max_plan_execution_date / 1000, tz=config.TIMEZONE)
+        if not states:
             states = State.task_states
 
-        type_params = {"instance_type": instance_type,
-                       "cycle_type": cycle_type,
-                       "filldata_type": filldata_type,
-                       "ti_type_tuple_list": ti_type_tuple_list}
-
-
-        # # 对task instance进行过滤
-        if min_plan_execution_date is not None and max_plan_execution_date is not None:
-            # # 获取所有符合时间过滤的task_id 和 execution_date
-            all_filter_task_info = TaskInstanceNext.get_instance_filter_exectuion_date(
-                airflow_task_ids=task_ids,
-                min_execution_date=min_plan_execution_date,
-                max_execution_date=max_plan_execution_date)
-
-            state_num = {}
-            sum_num = TaskInstance.get_instance_state_num_by_id(**type_params,
-                                                                id_date_list=all_filter_task_info,
-                                                                count=True)
-            state_num["count"] = sum_num
-
-            for state in states:
-
-                state_count = TaskInstance.get_instance_state_num_by_id(**type_params,
-                                                                            id_date_list=all_filter_task_info,
-                                                                            state=state)
-                state_num[state] = state_count
-
-        else:
-            state_num = {}
-            sum_num = TaskInstance.get_instance_state_num_by_id(**type_params,
-                                                                id_list=task_ids,
-                                                                count=True)
-            state_num["count"] = sum_num
-
-            for state in states:
-
-
-                state_count = TaskInstance.get_instance_state_num_by_id(**type_params,
-                                                                           id_list=task_ids,
-                                                                           state=state)
-                state_num[state] = state_count
-
-        success_state_count = state_num[State.SUCCESS]
-        complete_rate = 0
-        if sum_num != 0:
-            complete_rate = success_state_count * 1.0 / sum_num * 100
-            # 保留两位小数
-            complete_rate = round(complete_rate, 2)
-        state_num["complete_rate"] = complete_rate
-
-        return state_num
+        state_num = EasyAirflowTaskInstance.get_ti_states_summary(
+            dag_id,
+            task_ids=task_ids,
+            states=states,
+            min_data_interval_end=min_plan_execution_date,
+            max_data_interval_end=max_plan_execution_date
+        )
+        return {state: dict(state_num).get(state, 0) for state in State.task_states}
 
     @staticmethod
     def get_external_task_id(task_id):

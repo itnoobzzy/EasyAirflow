@@ -4,23 +4,18 @@
 
 from sqlalchemy import (Column,
                         Integer, String, DateTime)
+from airflow.models.taskinstance import TaskReschedule
 
-from utils.database import Base
 
+class EasyAirflowTaskReschedule(TaskReschedule):
 
-class TaskReschedule(Base):
-    """
-    TaskReschedule tracks rescheduled task instances.
-    """
-
-    __tablename__ = "task_reschedule"
-
-    id = Column(Integer, primary_key=True)
-    task_id = Column(String(250), nullable=False)
-    dag_id = Column(String(250), nullable=False)
-    execution_date = Column(DateTime, nullable=False)
-    try_number = Column(Integer, nullable=False)
-    start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
-    duration = Column(Integer, nullable=False)
-    reschedule_date = Column(DateTime, nullable=False)
+    def clear_task_reschedule(self, dag_id, task_id, execution_date):
+        """
+        清理重试记录
+        :param dag_id:
+        :param task_id:
+        :param execution_date:
+        :return:
+        """
+        self.query.filter_by(dag_id=dag_id, task_id=task_id, execution_date=execution_date).delete()
+        self.commit()

@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# author:wanglong
 
 import logging
 
 from sqlalchemy import (Column,
-                        Integer, String, Boolean,
-                        DateTime, JSON, func)
+                        Integer, String,
+                        DateTime,)
 
 from utils.airflow_database import Base
 from utils.database import landsat_provide_session
@@ -18,7 +17,6 @@ logger = logging.getLogger(__name__)
 class TaskInstanceType(Base):
     __tablename__ = "task_instance_type"
 
-    # id = Column(Integer, primary_key=True)
     task_id = Column(String(250), primary_key=True, comment='task 名称')
     execution_date = Column(DateTime, primary_key=True, comment='执行时间')
     type = Column(Integer, primary_key=True, comment='触发类型 : 补数据触发 1 ')
@@ -68,14 +66,10 @@ class TaskInstanceType(Base):
         return pr
 
     def unique_key(self):
-
         dict_info = self.props()
-
         task_id = dict_info['task_id']
         execution_date = dict_info['execution_date']
-
         unique_key = '{}-{}'.format(task_id, execution_date)
-
         return unique_key
 
     @landsat_provide_session
@@ -93,14 +87,11 @@ class TaskInstanceType(Base):
             TaskInstanceType.execution_date == execution_date,
             TaskInstanceType.type == type,
         )
-
         task_instance_type = qry.first()
-
         if task_instance_type is None:
             session.add(self)
         else:
             session.merge(self)
-
         session.commit()
 
     @classmethod
@@ -116,17 +107,12 @@ class TaskInstanceType(Base):
             TaskInstanceType.type == cls.FILL_DATA_TYPE
         )
         task_instance_types = qry.all()
-
         return task_instance_types
 
     @staticmethod
     @landsat_provide_session
     def get_task_all_instance(param, session=None):
-
         TI = TaskInstanceType
         qry = session.query(TI).filter(*param)
-
         all_data = qry.all()
-
         return all_data
-

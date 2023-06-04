@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# author:wanglong
 
 import logging
 from datetime import datetime, timedelta
@@ -8,17 +7,12 @@ from datetime import datetime, timedelta
 from croniter import croniter
 from sqlalchemy import (Column,
                         Integer, String, Boolean,
-                        DateTime, JSON, func)
-from sqlalchemy.orm.session import make_transient
+                        DateTime, JSON)
 
 from endpoints.models.base_model import DeletionMixin, AuditMixinNullable
-from endpoints.models.dag_model import DagDefine
 from endpoints.models.dag_task_dep_model import DagTaskDependence
 from utils.database import Base, landsat_provide_session
 from utils.dependence import Dependence
-from utils.state import State
-from utils.trigger_rule import TriggerRule
-
 
 logger = logging.getLogger(__name__)
 
@@ -248,7 +242,12 @@ class TaskDefine(Base, DeletionMixin, AuditMixinNullable):
     @staticmethod
     @landsat_provide_session
     def task_add_dep_by_user_dep(task, session=None):
-        # 检查依赖选项
+        """
+        添加任务间依赖关系
+        :param task:
+        :param session:
+        :return:
+        """
         task_id = task.task_id
         dag_id = task.dag_id
         upstream_task_ids = DagTaskDependence.get_task_up_depends(task_id)
@@ -292,3 +291,13 @@ class TaskDefine(Base, DeletionMixin, AuditMixinNullable):
                 upstream_task_id = external_task.task_id
                 downstream_task_id = task_id
                 DagTaskDependence.add_airflow_task_dep(dag_id, downstream_task_id, upstream_task_id)
+
+    @staticmethod
+    def is_external_task_id(task_id, upstream_up_id):
+        """
+        根据 影子任务的 命名规则，由 external_task_id 可知，影子任务由 该任务指定格式开头
+        :param task_id: 该任务
+        :param upstream_up_id: 影子任务id
+        :return: upstream_up_id 是影子任务返回 true，否则返回 false
+        """
+        return upstream_up_id.startswith("{}_wait_".format(task_id))

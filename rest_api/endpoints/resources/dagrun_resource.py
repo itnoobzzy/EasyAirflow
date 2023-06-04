@@ -1,24 +1,22 @@
 import logging
 from datetime import datetime
 
-from flask_restful import Resource, reqparse, request
+from flask_restful import Resource, reqparse
 
-from endpoints.handlers.deg_define_handlers import DagDefineHandlers
 from endpoints.models.dagrun_model import DagRun
 from endpoints.models.dagrun_next_model import DagRunNext
 from utils.response_safe import safe
-from utils.sonwflakeId import time_genector
 
 
 logger = logging.getLogger(__name__)
 
+
 class DagRunResource(Resource):
-    # todo
     @safe
     def get(self):
 
         parser = reqparse.RequestParser()
-        parser.add_argument('dag_id',type=str)
+        parser.add_argument('dag_id', type=str)
         parser.add_argument('execution_date', type=int)
 
 
