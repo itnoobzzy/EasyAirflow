@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-import requests
-import json
-
 from airflow.models import DagRun
-from sqlalchemy.orm.session import Session
 from airflow.utils.session import provide_session, NEW_SESSION
 from airflow.models.taskinstance import TaskInstance
 from airflow.utils.state import State
+from sqlalchemy.orm.session import Session
 from sqlalchemy import and_, func
 
 
@@ -101,3 +98,41 @@ class EasyAirflowTaskInstance(TaskInstance):
             TaskInstance.task_id == task_id,
             DagRun.data_interval_end == data_interval_end).first()
         return ti
+
+    @classmethod
+    @provide_session
+    def shutdown_ti(cls,
+                    task_instance: TaskInstance,
+                    ti_state: str,
+                    session: Session = NEW_SESSION):
+        """
+        停止掉任务实例以及对应的 job
+        :param task_instance:
+        :param ti_state: ti new state
+        :param session:
+        :return:
+        """
+        from airflow.jobs.job import Job
+        from airflow.models.taskreschedule import TaskReschedule
+
+        if task_instance.state == State.RUNNING:
+            task_instance.state = State.SHUTDOWN
+        else:
+            task_instance.state = ti_state
+        session.merge(task_instance)
+
+        tr = session.query(TaskReschedule).filter(
+            TaskReschedule.dag_id == task_instance.dag_id,
+            TaskReschedule.task_id == task_instance.task_id,
+            TaskReschedule.execution_date == task_instance.execution_date,
+            TaskReschedule.try_number == task_instance._try_number
+        ).all()
+        for t in tr:
+            session.delete(t)
+
+        if task_instance.job_id:
+            jobs = session.query(Job).filter(Job.id == task_instance.job_id).all()
+            for job in jobs:
+                job.state = State.SHUTDOWN
+                session.merge(job)
+        session.commit()

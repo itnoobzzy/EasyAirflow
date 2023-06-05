@@ -43,7 +43,6 @@ class DagDefine(Base):
         self.is_publish = is_publish
         self.catchup = catchup
         self.deletion = deletion
-        pass
 
     @staticmethod
     @landsat_provide_session

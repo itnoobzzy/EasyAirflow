@@ -5,7 +5,6 @@ from flask_restful import Resource, reqparse
 from endpoints.handlers.airflow_task_handlers import TaskHandlers
 from endpoints.handlers.task_define_handlers import TaskDefineHandlers
 from endpoints.models.task_model import TaskDefine
-from endpoints.models.taskinstance_type_model import TaskInstanceType
 from utils.response_safe import safe
 
 

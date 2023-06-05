@@ -1,152 +1,49 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# author:wanglong
 
-import datetime
 import json
 
+from airflow.utils.state import State
 from croniter import croniter
-from airflow.models.taskinstance import TaskReschedule
-from airflow.jobs.job import Job as BaseJob
 
-import config
-from endpoints.models.dagrun_model import DagRun
+from endpoints.models.dagrun_model import DagRun, EasyAirflowDagRun
 from endpoints.models.log_model import Log
-from endpoints.models.task_instance_model import TaskInstance
+from endpoints.models.task_instance_model import TaskInstance, EasyAirflowTaskInstance
 from endpoints.models.task_model import TaskDefine
 from endpoints.models.taskinstance_type_model import TaskInstanceType
 from config import SERVE_LOG_PROT
 from utils.airflow_database import airflow_provide_session
 from utils.airflow_web_task_handlers import TaskWebHandlers
-from utils.state import State
 from utils.times import datetime_convert_pendulum_by_timezone, datetime_timestamp_str
 
 
 class TaskHandlers(object):
 
     @staticmethod
-    @airflow_provide_session
-    def clear_task_instances(tis, activate_dag_runs=True, session=None):
+    def clear_task_instances(tis):
         """
-        只能运行正常的周期性任务，不能运行补数的类型
-        Clears a set of task instances, but makes sure the running ones
-        get killed.
-
+        重跑任务实例
         :param tis: a list of task instances
-        :param session: current session
         :param activate_dag_runs: flag to check for active dag run
-        :param dag: DAG object
         """
-
-        job_ids = []
+        dag_ids = []
+        execution_dates = []
         for ti in tis:
-            if ti.state == State.RUNNING:
-                if ti.job_id:
-                    ti.state = State.SHUTDOWN
-                    job_ids.append(ti.job_id)
-                ti.state = State.SHUTDOWN
-                session.merge(ti)
-            else:
-                ti.state = State.NONE
-                session.merge(ti)
-            # Clear all reschedules related to the ti to clear
-            tr = session.query(TaskReschedule).filter(
-                TaskReschedule.dag_id == ti.dag_id,
-                TaskReschedule.task_id == ti.task_id,
-                TaskReschedule.execution_date == ti.execution_date,
-                TaskReschedule.try_number == ti._try_number
-            ).all()
-            for t in tr:
-                session.delete(t)
+            dag_ids.append(ti.dag_id)
+            execution_dates.append(ti.execution_date)
+            EasyAirflowTaskInstance.shutdown_ti(ti, State.NONE)
 
-        if job_ids:
-            for job in session.query(BaseJob).filter(BaseJob.id.in_(job_ids)).all():
-                job.state = State.SHUTDOWN
-                session.merge(job)
-
-        if activate_dag_runs and tis:
-            drs = session.query(DagRun).filter(
-                DagRun.dag_id.in_({ti.dag_id for ti in tis}),
-                DagRun.execution_date.in_({ti.execution_date for ti in tis}),
-            ).all()
-
-            for dr in drs:
-                dr.state = State.RUNNING
-                dr.start_date = datetime.datetime.now(tz=config.TIMEZONE)
-                session.merge(dr)
-        session.commit()
+        if dag_ids and execution_dates:
+            EasyAirflowDagRun.trigger_dags(dag_ids, execution_dates)
 
     @staticmethod
-    @airflow_provide_session
-    def stop_task_instances(tis, activate_dag_runs=False, session=None):
+    def stop_task_instances(tis):
         """
-        只能运行正常的周期性任务，不能运行补数的类型
-        Clears a set of task instances, but makes sure the running ones
-        get killed.
-
+        停止任务实例
         :param tis: a list of task instances
-        :param session: current session
-        :param activate_dag_runs: flag to check for active dag run
-        :param dag: DAG object
         """
-
-        job_ids = []
         for ti in tis:
-            if ti.state == State.RUNNING:
-                if ti.job_id:
-                    ti.state = State.SHUTDOWN
-                    job_ids.append(ti.job_id)
-
-                ti.state = State.SHUTDOWN
-                session.merge(ti)
-            else:
-                # task_id = ti.task_id
-                # if dag and dag.has_task(task_id):
-                #     task = dag.get_task(task_id)
-                #     task_retries = task.retries
-                #     ti.max_tries = ti.try_number + task_retries - 1
-                # else:
-                #     # Ignore errors when updating max_tries if dag is None or
-                #     # task not found in dag since database records could be
-                #     # outdated. We make max_tries the maximum value of its
-                #     # original max_tries or the last attempted try number.
-                #     ti.max_tries = max(ti.max_tries, ti.prev_attempted_tries)
-                ti.state = State.FAILED
-                session.merge(ti)
-
-            # Clear all reschedules related to the ti to clear
-            TR = TaskReschedule
-            session.query(TR).filter(
-                TR.dag_id == ti.dag_id,
-                TR.task_id == ti.task_id,
-                TR.execution_date == ti.execution_date,
-                TR.try_number == ti._try_number
-            ).delete()
-
-        if job_ids:
-
-            for job in session.query(BaseJob).filter(BaseJob.id.in_(job_ids)).all():
-                job.state = State.SHUTDOWN
-
-                session.merge(job)
-
-        if activate_dag_runs and tis:
-
-            drs = session.query(DagRun).filter(
-                DagRun.dag_id.in_({ti.dag_id for ti in tis}),
-                DagRun.execution_date.in_({ti.execution_date for ti in tis}),
-            ).all()
-
-            for dr in drs:
-                print(drs)
-                # dr._state = State.RUNNING
-                dr.state = State.RUNNING
-                dr.start_date = datetime.datetime.now()
-
-                session.merge(dr)
-
-        session.commit()
-
+            EasyAirflowTaskInstance.shutdown_ti(ti, State.SHUTDOWN)
 
     @staticmethod
     def rerun_task_instances(tis):
@@ -277,6 +174,17 @@ class TaskHandlers(object):
     @airflow_provide_session
     def direct_run_task(dag_id,task_id,execution_date, host, port, session=None):
         TaskWebHandlers.direct_run_task_instance(host, port, dag_id,task_id,execution_date)
+
+    @staticmethod
+    def back_fill(dag_id, task_id, execution_date):
+        """
+        补数据
+        :param dag_id: dag id
+        :param task_id: task_id
+        :param execution_date: 计划执行时间
+        :return:
+        """
+
 
     @staticmethod
     def complement_task_instances( task_id, execution_next_date_timestamp_list):

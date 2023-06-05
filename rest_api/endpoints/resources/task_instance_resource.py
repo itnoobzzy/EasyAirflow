@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+from airflow.models import DagBag
 from flask_restful import Resource, reqparse
 
 import config
@@ -62,7 +63,7 @@ class TaskInstanceResource(Resource):
                 ti_list.append(ti)
                 add_external_ti(dag_id, downstream_task_id, plan_execution_date)
 
-        TaskHandlers.clear_task_instances(ti_list, activate_dag_runs=True)
+        TaskHandlers.clear_task_instances(ti_list)
         return {"status": 200, "data": "success"}
 
     @safe
@@ -101,3 +102,27 @@ class TaskInstanceResource(Resource):
         }
         http_status_code = 200
         return response_data, http_status_code
+
+    @safe
+    def delete(self, task_id):
+        """
+        暂停任务实例
+        :return:
+        """
+        parser = reqparse.RequestParser()
+        parser.add_argument('task_id', type=str)
+        parser.add_argument('dag_id', type=str)
+        parser.add_argument('plan_execution_date', type=int)
+
+        args = parser.parse_args()
+        if task_id is None:
+            task_id = args['task_id']
+        plan_execution_date = args['plan_execution_date']
+        plan_execution_date = datetime.fromtimestamp(plan_execution_date / 1000, tz=config.TIMEZONE)
+        dag_id = args['dag_id']
+        if task_id is None \
+                or plan_execution_date is None:
+            raise Exception("task_id or plan_execution_date  can not be None！")
+        ti = EasyAirflowTaskInstance.get_ti_by_id(dag_id, task_id, plan_execution_date)
+        TaskHandlers.stop_task_instances([ti])
+        return {"status": 200, "data": "success"}
