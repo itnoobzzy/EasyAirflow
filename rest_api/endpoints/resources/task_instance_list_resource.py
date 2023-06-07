@@ -84,12 +84,4 @@ class TaskInstanceListResource(Resource):
         if timestamp_list is not None:
             TaskHandlers.complement_task_instances(task_id, timestamp_list)
 
-        response_data = {
-            'status': 200,
-            "data": {
-                "plan_execution_dates": timestamp_list
-            }
-
-        }
-        http_status_code = 200
-        return response_data, http_status_code
+        return {"status": 200, "data": {"plan_execution_dates": timestamp_list}}

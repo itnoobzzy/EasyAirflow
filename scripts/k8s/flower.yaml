@@ -23,7 +23,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: flower
-          image: itnoobzzy/airflow:v2.6.0-python3.10
+          image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
           imagePullPolicy: IfNotPresent
           args: ["airflow", "celery", "flower"]
           env:

@@ -32,6 +32,7 @@ RUN set -ex \
         locales \
         procps \
         telnet
+RUN CHOWN -R airflow:airflow /opt/airflow
 
 USER airflow
 RUN pip install celery

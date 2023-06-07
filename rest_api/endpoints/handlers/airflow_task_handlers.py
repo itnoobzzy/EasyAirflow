@@ -2,19 +2,26 @@
 # -*- coding:utf-8 -*-
 
 import json
+import logging
 
+import pendulum
+from airflow.exceptions import DagNotFound
+from airflow.models import DagModel, DagBag
 from airflow.utils.state import State
 from croniter import croniter
+from airflow.executors.celery_executor import CeleryExecutor
+from airflow.executors.kubernetes_executor import KubernetesExecutor
+from airflow.executors.executor_loader import ExecutorLoader
 
-from endpoints.models.dagrun_model import DagRun, EasyAirflowDagRun
+from endpoints.models.dagrun_model import EasyAirflowDagRun
 from endpoints.models.log_model import Log
-from endpoints.models.task_instance_model import TaskInstance, EasyAirflowTaskInstance
+from endpoints.models.task_instance_model import EasyAirflowTaskInstance
 from endpoints.models.task_model import TaskDefine
-from endpoints.models.taskinstance_type_model import TaskInstanceType
 from config import SERVE_LOG_PROT
 from utils.airflow_database import airflow_provide_session
-from utils.airflow_web_task_handlers import TaskWebHandlers
 from utils.times import datetime_convert_pendulum_by_timezone, datetime_timestamp_str
+
+logger = logging.getLogger(__name__)
 
 
 class TaskHandlers(object):
@@ -66,7 +73,7 @@ class TaskHandlers(object):
         # todo 需要从配置获取
         port = SERVE_LOG_PROT
 
-        ti = TaskInstance.get_task_instance(dag_id, task_id, execution_date)
+        ti = EasyAirflowTaskInstance.get_task_instance(dag_id, task_id, execution_date)
 
         dag_id = ti.dag_id
         task_id = ti.task_id
@@ -125,15 +132,6 @@ class TaskHandlers(object):
         order by extra desc 
         """
 
-        # res_log = session.query(Log).filter(
-        #     Log.dag_id == ti.dag_id,
-        #     Log.task_id == ti.task_id,
-        #     Log.execution_date == ti.execution_date,
-        #     Log.owner != 'anonymous',
-        #     Log.event == 'cli_run',
-        #     Log.extra.like('%--raw%')
-        # ).order_by(Log.id).limit(1).offset(try_number - 1).first()
-
 
 
         res_extra_id_list = session.query(Log.extra,Log.id).filter(
@@ -171,23 +169,65 @@ class TaskHandlers(object):
         return hostname
 
     @staticmethod
-    @airflow_provide_session
-    def direct_run_task(dag_id,task_id,execution_date, host, port, session=None):
-        TaskWebHandlers.direct_run_task_instance(host, port, dag_id,task_id,execution_date)
+    def get_dag(dag_id):
+        dag_model = DagModel.get_current(dag_id)
+        if dag_model is None:
+            raise DagNotFound("Dag id {} not found in DagModel".format(dag_id))
 
-    @staticmethod
-    def back_fill(dag_id, task_id, execution_date):
+        def read_store_serialized_dags():
+            from airflow.configuration import conf
+            return conf.getboolean('core', 'store_serialized_dags')
+
+        dag_bag = DagBag(
+            dag_folder=dag_model.fileloc,
+            store_serialized_dags=read_store_serialized_dags()
+        )
+        dag = dag_bag.get_dag(dag_id)
+        if dag_id not in dag_bag.dags:
+            raise DagNotFound("Dag id {} not found".format(dag_id))
+        return dag
+
+    @classmethod
+    def back_fill(cls, dag_id, task_id, execution_date):
         """
-        补数据
+        补数据：直接生成对应计划执行时间的任务实例
+        获取对应的 executor，将序列化的 dag 直接提交到 executor 中执行，不需要等待
         :param dag_id: dag id
         :param task_id: task_id
         :param execution_date: 计划执行时间
         :return:
         """
+        dag = cls.get_dag(dag_id)
+        task = dag.get_task(task_id)
 
+        execution_date = pendulum.parse(execution_date)
+        ignore_all_deps = True
+        ignore_task_deps = True
+        ignore_ti_state = True
 
-    @staticmethod
-    def complement_task_instances( task_id, execution_next_date_timestamp_list):
+        executor = ExecutorLoader.get_default_executor()
+        valid_celery_config = isinstance(executor, CeleryExecutor)
+        valid_kubernetes_config = isinstance(executor, KubernetesExecutor)
+
+        if not valid_celery_config and not valid_kubernetes_config:
+            raise Exception("Only works with the Celery or Kubernetes executors, sorry")
+
+        ti = EasyAirflowTaskInstance(task=task, execution_date=execution_date)
+        ti.refresh_from_db()
+        pickle = dag.pickle()
+
+        executor.start()
+        executor.queue_task_instance(
+            ti,
+            pickle_id=pickle.id,
+            ignore_all_deps=ignore_all_deps,
+            ignore_task_deps=ignore_task_deps,
+            ignore_ti_state=ignore_ti_state)
+        executor.heartbeat()
+        logger.info(f"Sent {ti} to the message queue. it should start any moment now.")
+
+    @classmethod
+    def complement_task_instances(cls, task_id, execution_next_date_timestamp_list):
         """
         调用直接run的接口，运行指定的的实例
         :param task_id: 任务id
@@ -198,8 +238,6 @@ class TaskHandlers(object):
         dag_id = airflow_task.dag_id
         crontab_str = airflow_task.schedule_interval
 
-        type = TaskInstanceType.FILL_DATA_TYPE
-
         for execution_next_date_timestamp in execution_next_date_timestamp_list:
             # 获取当前执行时间的前一个执行周期
             iter = croniter(crontab_str, execution_next_date_timestamp / 1000)
@@ -208,9 +246,5 @@ class TaskHandlers(object):
             # 转化为0时区时间和字符串
             execution_date = datetime_timestamp_str(int(execution_date_timestamp))
 
-            # 添加补数据的实例
-            task_instance_type = TaskInstanceType(task_id, execution_date, type)
-            task_instance_type.upsert_task_instance_type()
-
-            # 运行指定任务实例
-            TaskHandlers.direct_run_task(dag_id, task_id, execution_date)
+            # 补数据
+            cls.back_fill(dag_id, task_id, execution_date)

@@ -301,3 +301,28 @@ class TaskDefine(Base, DeletionMixin, AuditMixinNullable):
         :return: upstream_up_id 是影子任务返回 true，否则返回 false
         """
         return upstream_up_id.startswith("{}_wait_".format(task_id))
+
+    @staticmethod
+    @landsat_provide_session
+    def get_backfill_task_plan_execution_date_timepstamp(start_plan_execution_date, end_plan_execution_date, task_id, session=None):
+        start_time = start_plan_execution_date
+        end_time = end_plan_execution_date
+        # # 校验start_time和end_time不能超过当前时间
+        utc_now = int(datetime.utcnow().timestamp() * 1000)
+        if int(start_time) > utc_now or int(end_time) > utc_now:
+            raise Exception("start_time or end_time greater than now")
+
+        _start = datetime.utcfromtimestamp(int(start_time / 1000))
+        airflow_task = TaskDefine.get_task(task_id)
+        crontab = airflow_task.schedule_interval
+        start = _start - timedelta(seconds=(_start.second + 1))
+        iter = croniter(crontab, start)
+        dt = []
+        while True:
+            next_time = iter.get_next() * 1000
+            if next_time > end_time:
+                break
+            dt.append(next_time)
+        timestamp_list = [int(i) for i in dt]
+
+        return timestamp_list
