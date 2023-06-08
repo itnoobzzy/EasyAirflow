@@ -1,7 +1,6 @@
 FROM apache/airflow:slim-latest-python3.10
 USER root
 EXPOSE 8080 5555 8793
-COPY config/airflow.cfg /opt/airflow/airflow.cfg
 RUN set -ex \
     && buildDeps=' \
         freetds-dev \
@@ -32,9 +31,12 @@ RUN set -ex \
         locales \
         procps \
         telnet
-RUN CHOWN -R airflow:airflow /opt/airflow
 
+RUN chmod 777 -R /opt/airflow/logs
+RUN chmod 777 -R /opt/airflow/dags
 USER airflow
+COPY config/airflow.cfg /opt/airflow/airflow.cfg
+
 RUN pip install celery
 RUN pip install flower
 RUN pip install pymysql

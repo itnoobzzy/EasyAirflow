@@ -12,5 +12,5 @@ SERVE_LOG_PROT = os.environ.get('SERVE_LOG_PROTOCOL', 'http')
 
 TIMEZONE = pytz.timezone("UTC")
 AIRFLOW_SQLALCHEMY_URI = os.environ.get('AIRFLOW_SQLALCHEMY_URI', 'mysql://airflow:airflow@localhost:3306/airflow')
-LANDSAT_SQLALCHEMY_URI = os.environ.get('LANDSAT_SQLALCHEMY_URI', 'mysql://airflow:airflow@localhost:3306/landsat')
+LANDSAT_SQL_ALCHEMY_CONN = os.environ.get('LANDSAT_SQL_ALCHEMY_CONN', 'mysql://airflow:airflow@localhost:3306/landsat')
 
