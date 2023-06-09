@@ -4,7 +4,7 @@
 import logging
 try:
     import akcensus
-    akcensus.setup('airflow-plus', current_frame_depth=2)
+    akcensus.setup('airflow-plus', current_frame_depth=2, log_path='../../logs')
 except Exception as e:
     logging.error(str(e))
 
