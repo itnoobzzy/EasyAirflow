@@ -48,7 +48,6 @@ RUN pip install apache-airflow-providers-apache-hive
 RUN pip install loguru==0.5.1
 RUN pip install opencensus
 RUN pip install opencensus-ext-requests
-RUN pip install opencensus-ext-sqlalchemy
 RUN pip install pathlib2
 RUN pip install Flask-RESTful
 

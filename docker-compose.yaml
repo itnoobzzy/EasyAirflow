@@ -1,7 +1,7 @@
 version: '2.1'
 services:
     webserver:
-        image: itnoobzzy/airflow:v2.6.0-python3.10
+        image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             - ./dags:/opt/airflow/dags
@@ -14,7 +14,7 @@ services:
             - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
         command: ["airflow", "webserver"]
     scheduler:
-        image: itnoobzzy/airflow:v2.6.0-python3.10
+        image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             # dag and plugins
@@ -26,7 +26,7 @@ services:
             - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
         command: ["airflow", "scheduler"]
     flower:
-        image: itnoobzzy/airflow:v2.6.0-python3.10
+        image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             - ./dags:/opt/airflow/dags
@@ -37,7 +37,7 @@ services:
             - "5555:5555"
         command: ["airflow", "celery", "flower"]
     worker:
-        image: itnoobzzy/airflow:v2.6.0-python3.10
+        image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             - ./dags:/opt/airflow/dags
@@ -50,7 +50,7 @@ services:
             - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
         command: ["airflow", "celery", "worker"]
     restApi:
-        image: itnoobzzy/airflow:v2.6.0-python3.10
+        image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
         restart: always
         volumes:
             - ./dags:/opt/airflow/dags
@@ -61,4 +61,4 @@ services:
             - "8090:8090"
         environment:
             - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
-        command: ["sleep 3600"]
+        entrypoint: ["/bin/bash", "/opt/airflow/plugins/rest_api/start.sh"]
