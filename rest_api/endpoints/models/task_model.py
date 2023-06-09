@@ -4,6 +4,7 @@
 import logging
 from datetime import datetime, timedelta
 
+import pendulum
 from croniter import croniter
 from sqlalchemy import (Column,
                         Integer, String, Boolean,

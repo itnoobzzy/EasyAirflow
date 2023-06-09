@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-
+import datetime
 import json
 import logging
+import sys
 
 import pendulum
-from airflow.exceptions import DagNotFound
-from airflow.models import DagModel, DagBag
-from airflow.utils.state import State
+from airflow import DAG
+from airflow.configuration import conf
+from airflow.exceptions import DagNotFound, AirflowException
+from airflow.models import DagModel, DagBag, TaskInstance, DagPickle, DagRun
+from airflow.utils.session import create_session
+from airflow.utils.state import State, DagRunState
 from croniter import croniter
 from airflow.executors.celery_executor import CeleryExecutor
-from airflow.executors.kubernetes_executor import KubernetesExecutor
 from airflow.executors.executor_loader import ExecutorLoader
 
 from endpoints.models.dagrun_model import EasyAirflowDagRun
@@ -173,22 +176,14 @@ class TaskHandlers(object):
         dag_model = DagModel.get_current(dag_id)
         if dag_model is None:
             raise DagNotFound("Dag id {} not found in DagModel".format(dag_id))
-
-        def read_store_serialized_dags():
-            from airflow.configuration import conf
-            return conf.getboolean('core', 'store_serialized_dags')
-
-        dag_bag = DagBag(
-            dag_folder=dag_model.fileloc,
-            store_serialized_dags=read_store_serialized_dags()
-        )
-        dag = dag_bag.get_dag(dag_id)
+        dag_bag = DagBag()
+        dag = DagBag().get_dag(dag_id)
         if dag_id not in dag_bag.dags:
             raise DagNotFound("Dag id {} not found".format(dag_id))
         return dag
 
     @classmethod
-    def back_fill(cls, dag_id, task_id, execution_date):
+    def back_fill(cls, dag_id, task_id, start_date, end_date):
         """
         补数据：直接生成对应计划执行时间的任务实例
         获取对应的 executor，将序列化的 dag 直接提交到 executor 中执行，不需要等待
@@ -197,54 +192,20 @@ class TaskHandlers(object):
         :param execution_date: 计划执行时间
         :return:
         """
+        task_regex = f"^{task_id}$"
         dag = cls.get_dag(dag_id)
         task = dag.get_task(task_id)
+        dag = dag.partial_subset(
+            task_ids_or_regex=task_regex,
+            include_upstream=False
+        )
+        dag.run(
+            start_date=start_date,
+            donot_pickle=False,
+            end_date=end_date,
+            ignore_first_depends_on_past=True,
+            ignore_task_deps=True,
+            pool=task.pool
+        )
 
-        execution_date = pendulum.parse(execution_date)
-        ignore_all_deps = True
-        ignore_task_deps = True
-        ignore_ti_state = True
 
-        executor = ExecutorLoader.get_default_executor()
-        valid_celery_config = isinstance(executor, CeleryExecutor)
-        valid_kubernetes_config = isinstance(executor, KubernetesExecutor)
-
-        if not valid_celery_config and not valid_kubernetes_config:
-            raise Exception("Only works with the Celery or Kubernetes executors, sorry")
-
-        ti = EasyAirflowTaskInstance(task=task, execution_date=execution_date)
-        ti.refresh_from_db()
-        pickle = dag.pickle()
-
-        executor.start()
-        executor.queue_task_instance(
-            ti,
-            pickle_id=pickle.id,
-            ignore_all_deps=ignore_all_deps,
-            ignore_task_deps=ignore_task_deps,
-            ignore_ti_state=ignore_ti_state)
-        executor.heartbeat()
-        logger.info(f"Sent {ti} to the message queue. it should start any moment now.")
-
-    @classmethod
-    def complement_task_instances(cls, task_id, execution_next_date_timestamp_list):
-        """
-        调用直接run的接口，运行指定的的实例
-        :param task_id: 任务id
-        :param execution_next_date_timestamp_list: 执行时间的时间撮格式,单位为 ms
-        :return:
-        """
-        airflow_task = TaskDefine.get_task(task_id)
-        dag_id = airflow_task.dag_id
-        crontab_str = airflow_task.schedule_interval
-
-        for execution_next_date_timestamp in execution_next_date_timestamp_list:
-            # 获取当前执行时间的前一个执行周期
-            iter = croniter(crontab_str, execution_next_date_timestamp / 1000)
-            execution_date_timestamp = iter.get_prev() * 1000
-
-            # 转化为0时区时间和字符串
-            execution_date = datetime_timestamp_str(int(execution_date_timestamp))
-
-            # 补数据
-            cls.back_fill(dag_id, task_id, execution_date)

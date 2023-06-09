@@ -1,7 +1,9 @@
 from datetime import datetime
 
+import pendulum
 from flask_restful import Resource, reqparse
 
+import config
 from endpoints.handlers.airflow_task_handlers import TaskHandlers
 from endpoints.handlers.task_define_handlers import TaskDefineHandlers
 from endpoints.models.task_model import TaskDefine
@@ -65,11 +67,13 @@ class TaskInstanceListResource(Resource):
         """
         parser = reqparse.RequestParser()
         parser.add_argument('task_id', type=str)
+        parser.add_argument('dag_id', type=str)
         parser.add_argument('start_plan_execution_date', type=int)
         parser.add_argument('end_plan_execution_date', type=int)
 
         args = parser.parse_args()
         task_id = args['task_id']
+        dag_id = args['dag_id']
         start_plan_execution_date = args['start_plan_execution_date']
         end_plan_execution_date = args['end_plan_execution_date']
         if task_id is None \
@@ -77,11 +81,8 @@ class TaskInstanceListResource(Resource):
                 or end_plan_execution_date is None:
             raise Exception("task_id or start_plan_execution_date or end_plan_execution_date can not be None！")
 
-        timestamp_list = TaskDefine.get_backfill_task_plan_execution_date_timepstamp(
-            start_plan_execution_date=start_plan_execution_date, end_plan_execution_date=end_plan_execution_date,
-            task_id=task_id)
+        start_date = datetime.fromtimestamp(start_plan_execution_date / 1000, tz=config.TIMEZONE)
+        end_date = datetime.fromtimestamp(end_plan_execution_date / 1000, tz=config.TIMEZONE)
 
-        if timestamp_list is not None:
-            TaskHandlers.complement_task_instances(task_id, timestamp_list)
-
-        return {"status": 200, "data": {"plan_execution_dates": timestamp_list}}
+        TaskHandlers.back_fill(dag_id, task_id, start_date, end_date)
+        return {"status": 200, "data": "ok"}

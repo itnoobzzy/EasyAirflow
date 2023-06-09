@@ -136,3 +136,4 @@ class EasyAirflowTaskInstance(TaskInstance):
                 job.state = State.SHUTDOWN
                 session.merge(job)
         session.commit()
+
