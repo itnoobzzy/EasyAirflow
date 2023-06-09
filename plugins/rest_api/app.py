@@ -2,6 +2,9 @@
 引入 akcensus 日志模块, 需要放在最前面
 """
 import logging
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 try:
     import akcensus
     akcensus.setup('airflow-plus', current_frame_depth=2, log_path='../../logs')
