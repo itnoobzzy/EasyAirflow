@@ -4,7 +4,6 @@ services:
         image: itnoobzzy/airflow:v2.6.0-python3.10
         restart: always
         volumes:
-            # dag and plugins
             - ./dags:/opt/airflow/dags
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
@@ -30,7 +29,6 @@ services:
         image: itnoobzzy/airflow:v2.6.0-python3.10
         restart: always
         volumes:
-            # dag and plugins
             - ./dags:/opt/airflow/dags
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
@@ -42,7 +40,6 @@ services:
         image: itnoobzzy/airflow:v2.6.0-python3.10
         restart: always
         volumes:
-            # dag and plugins
             - ./dags:/opt/airflow/dags
             - ./plugins:/opt/airflow/plugins
             - ./logs:/opt/airflow/logs
@@ -52,3 +49,16 @@ services:
         environment:
             - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
         command: ["airflow", "celery", "worker"]
+    restApi:
+        image: itnoobzzy/airflow:v2.6.0-python3.10
+        restart: always
+        volumes:
+            - ./dags:/opt/airflow/dags
+            - ./plugins:/opt/airflow/plugins
+            - ./logs:/opt/airflow/logs
+            - ./config/airflow.cfg:/opt/airflow/airflow.cfg
+        ports:
+            - "8090:8090"
+        environment:
+            - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
+        command: ["sleep 3600"]

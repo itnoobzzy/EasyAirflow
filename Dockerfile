@@ -45,5 +45,11 @@ RUN pip install redis
 RUN pip install livy==0.6.0
 RUN pip install apache-airflow-providers-mysql
 RUN pip install apache-airflow-providers-apache-hive
+RUN pip install loguru==0.5.1
+RUN pip install opencensus
+RUN pip install opencensus-ext-requests
+RUN pip install opencensus-ext-sqlalchemy
+RUN pip install pathlib2
+RUN pip install Flask-RESTful
 
 RUN airflow db init
