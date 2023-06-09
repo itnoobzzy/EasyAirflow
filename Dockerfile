@@ -32,7 +32,7 @@ RUN set -ex \
         procps \
         telnet
 
-MKDIR /opt/airflow/plugins
+RUN mkdir /opt/airflow/plugins
 RUN chmod 777 -R /opt/airflow
 RUN chmod 777 -R /opt/airflow/dags
 RUN chmod 777 -R /opt/airflow/plugins
