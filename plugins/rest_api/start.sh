@@ -1,5 +1,6 @@
 gunicorn app:app \
       -b 0.0.0.0:8090 -w 4 \
+      --chdir /opt/airflow/plugins/rest_api \
       --keep-alive 1800 \
       --timeout 1800  \
       --limit-request-field_size 16380  \
