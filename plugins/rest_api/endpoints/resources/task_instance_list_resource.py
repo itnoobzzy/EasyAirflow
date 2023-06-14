@@ -2,7 +2,7 @@ from datetime import datetime
 
 from flask_restful import Resource, reqparse
 
-import config
+from rest_api import config
 from rest_api.endpoints.handlers.airflow_task_handlers import TaskHandlers
 from rest_api.endpoints.handlers.task_define_handlers import TaskDefineHandlers
 from rest_api.utils.response_safe import safe

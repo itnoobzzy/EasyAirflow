@@ -192,7 +192,7 @@ class TaskHandlers(object):
         )
         dag.run(
             start_date=start_date,
-            donot_pickle=False,
+            # donot_pickle=False,
             end_date=end_date,
             ignore_first_depends_on_past=True,
             ignore_task_deps=True,
