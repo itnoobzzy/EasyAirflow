@@ -1,2 +1,2 @@
-from . import resources
-from . import models
+from rest_api.endpoints import resources
+from rest_api.endpoints import models

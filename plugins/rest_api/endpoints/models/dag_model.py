@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class DagDefine(Base):
     __tablename__ = 'l_dag_define'
+    __table_args__ = {'extend_existing': True}
 
     dag_id = Column(String(250), primary_key=True, comment='dag名称, 全局唯一')
     is_publish = Column(Boolean, default=False, comment='是否发布')

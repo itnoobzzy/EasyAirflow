@@ -28,10 +28,10 @@ import sys
 sys.path.append(pathlib.Path().absolute().as_posix())
 
 
-from .core import setup
-from .census import tracer
-from .utils import serialize, get_path, get_logger
-from .config import URU_FILTER_NAME_OR_LINE, URU_FILTER_KEYWORDS
+from rest_api.akcensus.core import setup
+from rest_api.akcensus.census import tracer
+from rest_api.akcensus.utils import serialize, get_path, get_logger
+from rest_api.akcensus.config import URU_FILTER_NAME_OR_LINE, URU_FILTER_KEYWORDS
 
 # ~~支持多个export的export~~
 # ~~优化serialize对相同对象的过滤，提高效率~~

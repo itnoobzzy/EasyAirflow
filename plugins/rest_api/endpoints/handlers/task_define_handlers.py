@@ -8,7 +8,6 @@ from rest_api.endpoints.handlers.airflow_task_handlers import TaskHandlers
 from rest_api.endpoints.models.dag_task_dep_model import DagTaskDependence
 from rest_api.endpoints.models.task_instance_model import EasyAirflowTaskInstance
 from rest_api.endpoints.models.task_model import TaskDefine
-from rest_api.endpoints.models.taskinstance_type_model import TaskInstanceType
 from rest_api.utils.state import State
 
 logger = logging.getLogger(__name__)
@@ -16,65 +15,6 @@ logger = logging.getLogger(__name__)
 
 class TaskDefineHandlers(object):
 
-
-    @staticmethod
-    def get_task_instance_try_log(dag_id, task_id, execution_date, try_num):
-        # url = get_task_instance_try_log(task.dag_id, task_id, ti.execution_date, try_num)
-        url,max_try_num = TaskHandlers.get_task_log_url(dag_id, task_id, execution_date, try_num)
-        if try_num is None:
-            try_num = max_try_num
-
-        log_context = "*** Fetching from: {}\n".format(url)
-        try:
-            import requests
-            timeout = 1000
-            response = requests.get(url, timeout=timeout)
-            response.encoding = "utf-8"
-
-            # Check if the resource was properly fetched
-            response.raise_for_status()
-
-            log_context += '\n' + response.text
-        except Exception as e:
-            log_context += "*** Failed to fetch log file from worker. {}\n".format(str(e))
-
-        # task = Task.get_task(task_id)
-        item = {
-
-            "task_id": task_id
-            # , "execution_date": int(dt2ts(execution_date) * 1000)
-            , "try_num": try_num
-            , "max_try_num": max_try_num
-            , "log_url": url
-            , "log_context": log_context
-        }
-
-        return item
-
-
-    @staticmethod
-    def get_ti_type_info_dict(task_ids, min_execution_date, max_execution_date):
-        # 拼接查询条件
-        TI = TaskInstanceType
-        param = []
-        if len(task_ids) >= 0:
-            param.append(TI.task_id.in_(task_ids))
-
-        if min_execution_date is not None and max_execution_date is not None:
-            param.append(TI.execution_date.between(min_execution_date, max_execution_date))
-
-        ti_types = TaskInstanceType.get_task_all_instance(param)
-
-        ti_type_info_dict_list = {}
-        for ti_type in ti_types:
-
-            dict_key = ti_type.unique_key()
-
-            ti_type_info_dict = ti_type.props()
-
-            ti_type_info_dict_list[dict_key] = ti_type_info_dict
-
-        return ti_type_info_dict_list
 
     @staticmethod
     def get_task_instance(

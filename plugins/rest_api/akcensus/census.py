@@ -16,8 +16,8 @@ from opencensus.log import TraceLogger
 from opencensus.trace import base_exporter
 from opencensus.common.transports import sync
 
-from .utils import serialize
-from .config import URU_RECORD_SPLIT
+from rest_api.akcensus.utils import serialize
+from rest_api.akcensus.config import URU_RECORD_SPLIT
 
 
 class NullExporter(base_exporter.Exporter):

@@ -8,12 +8,12 @@ from typing import Optional
 import logging
 import loguru
 from opencensus.trace import config_integration
-from .census import \
+from rest_api.akcensus.census import \
     InterceptTraceHandler, \
     TraceInterceptLogger, \
     TraceRootLogger
-from .uru import get_logger
-from .config import OPENCENSUS_EXT, OPENCENSUS_CURRENT_FRAME_DEPTH
+from rest_api.akcensus.uru import get_logger
+from rest_api.akcensus.config import OPENCENSUS_EXT, OPENCENSUS_CURRENT_FRAME_DEPTH
 
 
 def setup(env, current_frame_depth: Optional[int] = None, log_path: Optional[str] = None):

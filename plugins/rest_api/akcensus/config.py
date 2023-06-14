@@ -6,7 +6,7 @@
 import sys
 import copy
 import os
-from .utils import get_path
+from rest_api.akcensus.utils import get_path
 
 
 # opencensus 配置

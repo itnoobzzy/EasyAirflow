@@ -1,15 +1,13 @@
 import logging
 from datetime import datetime
 
-from airflow.models import DagBag
 from flask_restful import Resource, reqparse
 
-import config
+from rest_api import config
 from rest_api.endpoints.handlers.airflow_task_handlers import TaskHandlers
 from rest_api.endpoints.handlers.task_define_handlers import TaskDefineHandlers
 from rest_api.endpoints.models.dag_task_dep_model import DagTaskDependence
 from rest_api.endpoints.models.task_instance_model import EasyAirflowTaskInstance
-from rest_api.endpoints.models.taskinstance_next_model import TaskInstanceNext
 from rest_api.utils.response_safe import safe
 
 logger = logging.getLogger(__name__)
@@ -65,43 +63,6 @@ class TaskInstanceResource(Resource):
 
         TaskHandlers.clear_task_instances(ti_list)
         return {"status": 200, "data": "success"}
-
-    @safe
-    def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('task_instances', type=dict, action='append')
-        args = parser.parse_args()
-        task_instances = args['task_instances']
-
-        ti_list = []
-        for task_instance in task_instances:
-            task_instance_next = TaskInstanceNext.get_task_instance_next_by_task_plan(task_id=task_instance['task_id'],
-                                                                                      next_execution_date=task_instance[
-                                                                                          'plan_execution_date'])
-            execution_date = task_instance_next.execution_date
-            dag_id = task_instance_next.dag_id
-            ti = TaskInstance.get_task_instance(dag_id, task_instance['task_id'], execution_date)
-
-            external_task_ids = TaskDefineHandlers.get_external_task_id(task_instance['task_id'])
-            if external_task_ids:
-                for external_task_id in external_task_ids:
-                    external_ti = TaskInstance.get_task_instance(dag_id, external_task_id, execution_date)
-                    if external_ti:
-                        ti_list.append(external_ti)
-            if ti:
-                ti_list.append(ti)
-
-        TaskHandlers.clear_task_instances(ti_list, activate_dag_runs=True)
-
-        response_data = {
-            'status': 200,
-            "data": {
-
-            }
-
-        }
-        http_status_code = 200
-        return response_data, http_status_code
 
     @safe
     def delete(self, task_id):

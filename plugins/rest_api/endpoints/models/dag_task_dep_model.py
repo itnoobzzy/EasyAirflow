@@ -12,6 +12,7 @@ from rest_api.utils.database import Base, landsat_provide_session
 
 class DagTaskDependence(Base):
     __tablename__ = 'l_dag_task_dep'
+    __table_args__ = {'extend_existing': True}
 
     dag_id = Column(String(200), nullable=True, comment='dag 名称，全局唯一')
     task_id = Column(String(200), primary_key=True, comment='task 名称，在同一个 dag 中只能出现一个')

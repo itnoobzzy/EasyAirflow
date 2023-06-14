@@ -3,7 +3,6 @@ from datetime import datetime
 from flask_restful import Resource, reqparse
 
 from rest_api.endpoints.handlers.task_define_handlers import TaskDefineHandlers
-from rest_api.endpoints.models.taskinstance_type_model import TaskInstanceType
 from rest_api.utils.response_safe import safe
 
 

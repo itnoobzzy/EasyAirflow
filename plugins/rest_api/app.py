@@ -19,11 +19,9 @@ from rest_api.endpoints.resources import (
     DagResource,
     DagRunListResource,
     DagRunPlanExecutionDateResource,
-    DagRunTaskInstancesResource,
     DagRunSummaryResource,
     TaskInstanceListResource,
     TaskInstanceSummaryResource,
-    TaskInstanceLogResource,
     TaskInstanceResource,
     DagRunLastResource,
     DagRunResource,
@@ -41,7 +39,6 @@ api.add_resource(DagResource, '/dags')
 api.add_resource(DagFile, '/dagfile')
 
 api.add_resource(DagRunPlanExecutionDateResource, '/dagruns/plan_execution_date')
-api.add_resource(DagRunTaskInstancesResource, '/dagruns/task_instances')
 api.add_resource(DagRunLastResource, '/dagruns/latest')
 api.add_resource(DagRunSummaryResource, '/dagruns/summary')
 api.add_resource(DagRunListResource, '/dag_runs')
@@ -49,7 +46,6 @@ api.add_resource(DagRunResource, '/dag_run')
 
 api.add_resource(TaskInstanceSummaryResource, '/task_instances/summary')
 api.add_resource(TaskInstanceListResource, '/task_instances')
-api.add_resource(TaskInstanceLogResource, '/task_instance/log/<task_id>')
 api.add_resource(TaskInstanceResource, '/task_instance/<task_id>', '/task_instance')
 
 if __name__ == '__main__':

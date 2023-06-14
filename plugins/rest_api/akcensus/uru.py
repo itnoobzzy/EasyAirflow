@@ -29,7 +29,7 @@ import loguru
 from loguru._logger import Core, Logger
 from loguru._handler import Handler
 
-from .config import *
+from rest_api.akcensus.config import *
 
 
 def _serialize_record(cls, text, record):

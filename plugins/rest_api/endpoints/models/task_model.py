@@ -14,11 +14,13 @@ from rest_api.endpoints.models.dag_task_dep_model import DagTaskDependence
 from rest_api.utils.database import Base, landsat_provide_session
 from rest_api.utils.dependence import Dependence
 
+
 logger = logging.getLogger(__name__)
 
 
 class TaskDefine(Base, DeletionMixin, AuditMixinNullable):
     __tablename__ = 'l_task_define'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     task_id = Column(String(250), unique=True, comment='task 名称, 唯一')
