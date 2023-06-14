@@ -83,13 +83,40 @@ class TaskHandlers(object):
             task_ids_or_regex=task_regex,
             include_upstream=False
         )
-        dag.run(
+        # dag.run(
+        #     start_date=start_date,
+        #     donot_pickle=True,
+        #     end_date=end_date,
+        #     ignore_first_depends_on_past=True,
+        #     ignore_task_deps=True,
+        #     pool=task.pool
+        # )
+        from airflow.executors.celery_executor import CeleryExecutor
+        from airflow.jobs.job import Job
+        from airflow.jobs.job import run_job
+        from airflow.jobs.backfill_job_runner import BackfillJobRunner
+
+        executor = CeleryExecutor
+        job = Job(executor=executor)
+        job_runner = BackfillJobRunner(
+            job=job,
+            dag=dag,
             start_date=start_date,
-            donot_pickle=True,
             end_date=end_date,
-            ignore_first_depends_on_past=True,
+            mark_success=False,
+            donot_pickle=True,
             ignore_task_deps=True,
-            pool=task.pool
+            ignore_first_depends_on_past=True,
+            pool=task.pool,
+            delay_on_limit_secs=1.0,
+            verbose=False,
+            conf=None,
+            rerun_failed_tasks=False,
+            run_backwards=False,
+            run_at_least_once=False,
+            continue_on_failures=False,
+            disable_retry=False,
         )
+        run_job(job=job, execute_callable=job_runner._execute)
 
 
