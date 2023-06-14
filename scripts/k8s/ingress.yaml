@@ -20,3 +20,10 @@ spec:
               backend:
                 serviceName: airflow-flower-svc
                 servicePort: 5555
+    - host: airflow-api.akulaku.com
+      http:
+        paths:
+            - path: /
+              backend:
+                serviceName: airflow-restapi-svc
+                servicePort: 8090

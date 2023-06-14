@@ -3,7 +3,6 @@
 # author:wanglong
 
 from .connection_resource import ConnectionResource
-from .id_resource import IdResource
 from .dag_resource import DagResource, DagFile
 from .dagrun_list_resource import DagRunListResource
 from .plan_execution_date import DagRunPlanExecutionDateResource

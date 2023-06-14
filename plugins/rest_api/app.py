@@ -15,7 +15,6 @@ from flask import Flask
 from flask_restful import Api
 
 from rest_api.endpoints.resources import (
-    IdResource,
     ConnectionResource,
     DagResource,
     DagRunListResource,
@@ -36,7 +35,6 @@ api = Api(app)
 
 api.prefix = '/api/v1'
 
-api.add_resource(IdResource, '/id')
 api.add_resource(ConnectionResource, '/connections')
 
 api.add_resource(DagResource, '/dags')
