@@ -32,7 +32,7 @@ class DatabaseManager:
 
     @classmethod
     def create_database_engine(cls) -> Engine:
-        return _sa_create_engine(config.LANDSAT_SQL_ALCHEMY_CONN,
+        return _sa_create_engine(config.LANDSAT_SQLALCHEMY_CONN,
                                  pool_pre_ping=True,
                                  pool_recycle=3600
                                  )

@@ -11,7 +11,7 @@ services:
         ports:
             - "8080:8080"
         environment:
-            - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
+            - LANDSAT_SQLALCHEMY_CONN=${LANDSAT_SQLALCHEMY_CONN}
         command: ["airflow", "webserver"]
     scheduler:
         image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
@@ -23,7 +23,7 @@ services:
             - ./logs:/opt/airflow/logs
             - ./config/airflow.cfg:/opt/airflow/airflow.cfg
         environment:
-            - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
+            - LANDSAT_SQLALCHEMY_CONN=${LANDSAT_SQLALCHEMY_CONN}
         command: ["airflow", "scheduler"]
     flower:
         image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
@@ -47,7 +47,7 @@ services:
         ports:
             - "8793:8793"
         environment:
-            - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
+            - LANDSAT_SQLALCHEMY_CONN=${LANDSAT_SQLALCHEMY_CONN}
         command: ["airflow", "celery", "worker"]
     restApi:
         image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
@@ -60,5 +60,5 @@ services:
         ports:
             - "8090:8090"
         environment:
-            - LANDSAT_SQL_ALCHEMY_CONN=${LANDSAT_SQL_ALCHEMY_CONN}
+            - LANDSAT_SQLALCHEMY_CONN=${LANDSAT_SQLALCHEMY_CONN}
         entrypoint: ["/bin/bash", "/opt/airflow/plugins/rest_api/start.sh"]

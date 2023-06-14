@@ -20,9 +20,9 @@ from airflow_dag_template.database import DBManger
 # The base class which our objects will be defined on.
 Base = declarative_base()
 
-LANDSAT_SQL_ALCHEMY_CONN = os.environ.get("LANDSAT_SQL_ALCHEMY_CONN")
+LANDSAT_SQLALCHEMY_CONN = os.environ.get("LANDSAT_SQLALCHEMY_CONN")
 
-landsat_db = DBManger(LANDSAT_SQL_ALCHEMY_CONN)
+landsat_db = DBManger(LANDSAT_SQLALCHEMY_CONN)
 
 
 @contextlib.contextmanager
