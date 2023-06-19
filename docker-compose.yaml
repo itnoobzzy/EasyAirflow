@@ -49,16 +49,3 @@ services:
         environment:
             - LANDSAT_SQLALCHEMY_CONN=${LANDSAT_SQLALCHEMY_CONN}
         command: ["airflow", "celery", "worker"]
-    restApi:
-        image: registry.akulaku.com/data/airflow:v2.6.0-python3.10
-        restart: always
-        volumes:
-            - ./dags:/opt/airflow/dags
-            - ./plugins:/opt/airflow/plugins
-            - ./logs:/opt/airflow/logs
-            - ./config/airflow.cfg:/opt/airflow/airflow.cfg
-        ports:
-            - "8090:8090"
-        environment:
-            - LANDSAT_SQLALCHEMY_CONN=${LANDSAT_SQLALCHEMY_CONN}
-        entrypoint: ["/bin/bash", "/opt/airflow/plugins/rest_api/start.sh"]

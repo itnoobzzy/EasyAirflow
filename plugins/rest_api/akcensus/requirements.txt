@@ -1,6 +1,0 @@
-loguru==0.5.1
-opencensus
-opencensus-ext-requests
-opencensus-ext-sqlalchemy
-pathlib2
-celery
